@@ -129,7 +129,7 @@ efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable) {
   Print(L"Initialized GOP.\n\rFramebuffer address 0x%x size %d, width %d "
         L"height %d pixelsperline %d\n\r",
         fb.fbbase, fb.fbsize, fb.width, fb.height, fb.ppsl);
-  uefi_call_wrapper(BS->Stall, 1, 5000000);
+  //   uefi_call_wrapper(BS->Stall, 1, 5000000);
   void (*kernel_entry)(FrameBuffer *) =
       ((__attribute__((sysv_abi)) void (*)(FrameBuffer *))header.e_entry);
   kernel_entry(&fb);
