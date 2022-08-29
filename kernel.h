@@ -9,4 +9,4 @@ typedef struct {
   unsigned int ppsl;
 } FrameBuffer;
 
-#endif
+#endif // __KERNEL_H__

@@ -26,7 +26,7 @@ UINT64 get_file_size(EFI_FILE_HANDLE file_handle) {
   return ret;
 }
 
-int initialize_gop() {
+EFI_STATUS initialize_gop() {
   EFI_GRAPHICS_OUTPUT_PROTOCOL *gop;
   EFI_STATUS status;
   EFI_GUID gopGuid = EFI_GRAPHICS_OUTPUT_PROTOCOL_GUID;
@@ -82,35 +82,14 @@ efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable) {
     UINT64 header_size = sizeof(header);
     uefi_call_wrapper(kernel_file->Read, 3, kernel_file, &header_size, &header);
   }
-  int ok = 1;
-  if (strncmpa(&header.e_ident[EI_MAG0], ELFMAG, SELFMAG)) {
-    Print(L"EI_MAG0 ERROR\n\r");
-    ok &= 0;
-  }
-  if (header.e_ident[EI_CLASS] != ELFCLASS64) {
-    Print(L"EI_CLASS ERROR\n\r");
-    ok &= 0;
-  }
-  if (header.e_ident[EI_DATA] != ELFDATA2LSB) {
-    Print(L"EI_DATA ERROR\n\r");
-    ok &= 0;
-  }
-  if (header.e_type != ET_EXEC) {
-    Print(L"Non-Exec\n\r");
-    ok &= 0;
-  }
-  if (header.e_machine != EM_X86_64) {
-    Print(L"Wrong Machine\n\r");
-    ok &= 0;
-  }
-  if (header.e_version != EV_CURRENT) {
-    Print(L"Wrong version\n\r");
-    ok &= 0;
-  }
-  if (ok)
-    Print(L"Kernel header verified!\n\r");
-  else
+  if (strncmpa(&header.e_ident[EI_MAG0], ELFMAG, SELFMAG) ||
+      header.e_ident[EI_CLASS] != ELFCLASS64 ||
+      header.e_ident[EI_DATA] != ELFDATA2LSB || header.e_type != ET_EXEC ||
+      header.e_machine != EM_X86_64 || header.e_version != EV_CURRENT) {
+    Print(L"Unable to verify kernel header.\n\r");
     goto END;
+  } else
+    Print(L"Kernel header verified!\n\r");
   Elf64_Phdr *program_headers;
   {
     UINT64 load_size = header.e_phnum * header.e_phentsize;
