@@ -27,13 +27,16 @@ gnu-efi/%: libgnuefi
 libgnuefi:
 	$(MAKE) -C gnu-efi
 
-$(OSIMG): bootloader.efi kernel.efi
+$(OSIMG): bootloader.efi kernel.elf
 	dd if=/dev/zero of=$(OSIMG) bs=512 count=93750
 	mformat -i $(OSIMG) ::
 	mmd -i $(OSIMG) ::/EFI
 	mmd -i $(OSIMG) ::/EFI/BOOT
-	mcopy -i $(OSIMG) kernel.efi ::
+	mcopy -i $(OSIMG) kernel.elf ::
 	mcopy -i $(OSIMG) bootloader.efi ::/EFI/BOOT/BOOTX64.EFI
+
+%.elf: %.o %.ld
+	$(LD) -T $(word 2,$^) -static -Bsymbolic -nostdlib -o $@ $<
 
 %.efi: %.so
 	objcopy -j .text \
@@ -59,6 +62,6 @@ qemu: $(OSIMG)
 .PHONY: clean
 clean:
 	$(MAKE) -C gnu-efi clean
-	rm -f $(OSIMG) *.so bootloader.efi kernel.efi *.o
+	rm -f $(OSIMG) *.so bootloader.efi kernel.elf *.o
 
 .SECONDARY:
