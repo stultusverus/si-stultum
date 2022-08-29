@@ -1,0 +1,1 @@
+int _kernel_start() { return 123; }
