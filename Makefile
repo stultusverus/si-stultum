@@ -46,11 +46,12 @@ main.o: main.c
 	-maccumulate-outgoing-args \
 	-c main.c -o main.o
 
-qemu: $(OSIMG) OVMF.fd
+qemu: $(OSIMG)
 	qemu-system-x86_64 \
 		-m 256M -cpu qemu64 -net none \
-		-drive "file=$(OSIMG)" \
-		-pflash ./OVMF.fd
+		-drive "file=$(OSIMG),format=raw" \
+		-drive if=pflash,format=raw,unit=0,file=OVMF_CODE.fd,readonly=on\
+		-drive if=pflash,format=raw,unit=1,file=OVMF_VARS.fd
 
 clean:
 	$(MAKE) -C $(SUBDIRS) clean
