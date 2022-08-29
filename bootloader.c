@@ -2,6 +2,10 @@
 #include <efilib.h>
 #include <elf.h>
 
+#include "kernel.h"
+
+FrameBuffer fb;
+
 EFI_FILE_HANDLE get_volume(EFI_HANDLE image) {
   EFI_FILE_HANDLE volume;
   EFI_LOADED_IMAGE *loaded_image;
@@ -27,6 +31,8 @@ UINT64 get_file_size(EFI_FILE_HANDLE file_handle) {
   FreePool(file_info);
   return ret;
 }
+
+int initialize_gop() { return 0; }
 
 EFI_STATUS
 EFIAPI
@@ -106,9 +112,66 @@ efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable) {
   }
   Print(L"Done loading kernel.\n\r");
 
-  int (*kernel_entry)() = ((__attribute__((sysv_abi)) int (*)())header.e_entry);
-  Print(L"%d\n\r", kernel_entry());
+  EFI_GRAPHICS_OUTPUT_PROTOCOL *gop;
 
+  {
+    EFI_GUID gopGuid = EFI_GRAPHICS_OUTPUT_PROTOCOL_GUID;
+    UINTN status =
+        uefi_call_wrapper(BS->LocateProtocol, 3, &gopGuid, NULL, (void **)&gop);
+    if (EFI_ERROR(status)) {
+      Print(L"Unable to locate GOP\n\r");
+      goto END;
+    }
+  }
+  EFI_GRAPHICS_OUTPUT_MODE_INFORMATION *info;
+  UINTN SizeOfInfo, numModes, nativeMode;
+  {
+    UINTN status = uefi_call_wrapper(gop->QueryMode, 4, gop,
+                                     gop->Mode == NULL ? 0 : gop->Mode->Mode,
+                                     &SizeOfInfo, &info);
+    // this is needed to get the current video mode
+    if (status == EFI_NOT_STARTED)
+      status = uefi_call_wrapper(gop->SetMode, 2, gop, 0);
+    if (EFI_ERROR(status)) {
+      Print(L"Unable to get native mode\n\r");
+    } else {
+      nativeMode = gop->Mode->Mode;
+      numModes = gop->Mode->MaxMode;
+    }
+  }
+  for (int i = 0; i < numModes; i++) {
+    uefi_call_wrapper(gop->QueryMode, 4, gop, i, &SizeOfInfo, &info);
+    Print(L"mode %03d width %d height %d format %x%s\n\r", i,
+          info->HorizontalResolution, info->VerticalResolution,
+          info->PixelFormat, i == nativeMode ? "(current)" : "");
+  }
+  {
+    UINTN mode = 0;
+    UINTN status = uefi_call_wrapper(gop->SetMode, 2, gop, mode);
+    if (EFI_ERROR(status)) {
+      Print(L"Unable to set mode %03d\n\r", mode);
+    } else {
+      Print(L"Framebuffer address 0x%x size %d, width %d height %d "
+            L"pixelsperline %d\n\r",
+            gop->Mode->FrameBufferBase, gop->Mode->FrameBufferSize,
+            gop->Mode->Info->HorizontalResolution,
+            gop->Mode->Info->VerticalResolution,
+            gop->Mode->Info->PixelsPerScanLine);
+    }
+    fb.fbbase = gop->Mode->FrameBufferBase;
+    fb.fbsize = gop->Mode->FrameBufferSize;
+    fb.height = gop->Mode->Info->VerticalResolution;
+    fb.width = gop->Mode->Info->HorizontalResolution;
+    fb.ppsl = gop->Mode->Info->PixelsPerScanLine;
+
+    Print(L"Framebuffer address 0x%x size %d, width %d height %d "
+          L"pixelsperline %d\n\r",
+          fb.fbbase, fb.fbsize, fb.width, fb.height, fb.ppsl);
+    uefi_call_wrapper(BS->Stall, 1, 5000000);
+    void (*kernel_entry)(FrameBuffer *) =
+        ((__attribute__((sysv_abi)) void (*)(FrameBuffer *))header.e_entry);
+    kernel_entry(&fb);
+  }
 END:
   for (;;)
     ;
