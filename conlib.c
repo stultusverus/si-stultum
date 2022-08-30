@@ -3,7 +3,8 @@
 
 #include "conlib.h"
 
-void cinit(ssfn_font_t *font, void *fbbase, int w, int h, int p) {
+void cinit(ssfn_font_t *font, void *fbbase, unsigned int w, unsigned int h,
+           unsigned int p) {
   /* set up context by global variables */
   ssfn_src = font;       /* the bitmap font to use */
   ssfn_dst.ptr = fbbase; /* framebuffer address and bytes per line */

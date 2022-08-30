@@ -40,19 +40,6 @@ void _start(BootInfo boot_info) {
       max_size = crt_size;
     if (crt_size < min_size)
       min_size = crt_size;
-    // cputs("Descriptor ");
-    // cputs(" @0x");
-    // cputs(citoaul((uint64_t)desc, buff, 16));
-    // cputs(":[type=");
-    // cputs(citoa(desc->type, buff, 10));
-    // cputs("] ");
-    // cputs(EFI_MEMORY_TYPE_STRINGS[desc->type]);
-    // cputs(", size=");
-    // cputs(citoaul(desc->numberofpages * 4096 / 1024, buff, 10));
-    // cputs("KiB, P ");
-    // cputs(citoaul((uint64_t)desc->physicalstart, buff, 16));
-    // cputs(" V ");
-    // cputln(citoaul((uint64_t)desc->virtualstart, buff, 16));
   }
   cputln("max & min page frames (KB):");
   cputln(citoaul(max_size, buff, 10));
