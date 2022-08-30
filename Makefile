@@ -10,6 +10,7 @@ ifeq ($(shell uname),Darwin)
 	OBJCOPY=x86_64-unknown-linux-gnu-objcopy
 else
 	OBJCOPY=objcopy
+	CC=x86_64-unknown-linux-gnu-gcc
 endif
 
 CFLAGS=-Ignu-efi/inc \
@@ -29,6 +30,8 @@ LDFLAGS=-shared -Bsymbolic \
 LOADLIBES=-lgnuefi -lefi
 LDLIBS=$(LOADLIBES)
 
+KERNEL_OBJS=kernel.o font.o conlib.o efimem.o kermem.o
+
 .PHONY: all
 all: $(OSIMG)
 
@@ -46,8 +49,8 @@ $(OSIMG): bootloader.efi kernel.elf
 	mcopy -i $(OSIMG) kernel.elf ::
 	mcopy -i $(OSIMG) bootloader.efi ::/EFI/BOOT/BOOTX64.EFI
 
-kernel.elf: kernel.o kernel.ld font.o conlib.o efimem.o
-	$(LD) -T $(word 2,$^) -static -Bsymbolic -nostdlib -o kernel.elf kernel.o font.o conlib.o efimem.o
+kernel.elf: kernel.ld $(KERNEL_OBJS)
+	$(LD) -T $< -static -Bsymbolic -nostdlib -o kernel.elf $(KERNEL_OBJS)
 
 font.o: u_vga16.sfn
 	$(LD) -r -b binary -o $@ $<

@@ -15,7 +15,7 @@ typedef struct {
 
 typedef struct {
   FrameBuffer *fb;
-  void *mmap;
+  EfiMemoryDescriptor *mmap;
   uint64_t mmap_size;
   uint64_t mmap_desc_size;
 } BootInfo;

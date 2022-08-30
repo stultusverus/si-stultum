@@ -152,14 +152,8 @@ EFI_MMAP_LOAD_AGAIN:
     goto END;
   }
 
-  for (EFI_MEMORY_DESCRIPTOR *it = efi_memory_map;
-       (UINT8 *)it < (UINT8 *)efi_memory_map + efi_memory_map_size;
-       it = ((EFI_MEMORY_DESCRIPTOR *)(((UINT8 *)it) + efi_descriptor_size))) {
-    Print(L"Descriptor [0x%x], type=%u\n\r", it, it->Type);
-  }
-
   Print(L"EFI MEMORY MAP LOADED, GOING TO KERNEL\n\r");
-  for (int i = 3; i > 0; i--) {
+  for (int i = 1; i > 0; i--) {
     Print(L"%d\r", i);
     uefi_call_wrapper(BS->Stall, 1, 1000000);
   }
@@ -169,7 +163,7 @@ EFI_MMAP_LOAD_AGAIN:
       ((__attribute__((sysv_abi)) void (*)(BootInfo))header.e_entry);
 
   kernel_entry((BootInfo){.fb = &fb,
-                          .mmap = efi_memory_map,
+                          .mmap = (EfiMemoryDescriptor *)efi_memory_map,
                           .mmap_size = efi_memory_map_size,
                           .mmap_desc_size = efi_descriptor_size});
 
