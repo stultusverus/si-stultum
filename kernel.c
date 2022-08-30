@@ -2,15 +2,15 @@
 #include "conlib.h"
 #include "kermem.h"
 
-extern unsigned char _binary_u_vga16_sfn_start;
+extern uint8_t _binary_u_vga16_sfn_start;
+extern uint8_t _kernel_start;
+extern uint8_t _kernel_end;
 
 // Must be static. why?
 static inline void plotpixel32(FrameBuffer *fb, int x, int y,
                                unsigned int pixel) {
   *((unsigned int *)(fb->fbbase + 4 * fb->ppsl * y + 4 * x)) = pixel;
 }
-
-uint32_t test_buffer[30];
 
 void _start(BootInfo boot_info) {
   char buff[100];
@@ -25,37 +25,42 @@ void _start(BootInfo boot_info) {
   cputs("], ");
   cputs(citoaul(mmap_entries, buff, 10));
   cputs(" entries, desc_size=0x");
-  cputln(citoaul(boot_info.mmap_desc_size, buff, 16));
-  cputs("Total memory size is ");
+  cputs(citoaul(boot_info.mmap_desc_size, buff, 16));
+  cputs(", total size is ");
   cputs(citoaul(get_memory_size(boot_info.mmap, boot_info.mmap_size,
                                 boot_info.mmap_desc_size),
                 buff, 10));
   cputln(" Bytes.");
 
-  uint64_t max_size = 0, min_size = 1024000;
-  for (EfiMemoryDescriptor *desc = boot_info.mmap;
-       (uint8_t *)desc < (uint8_t *)boot_info.mmap + boot_info.mmap_size;
-       desc = ((EfiMemoryDescriptor *)(((uint8_t *)desc) +
-                                       boot_info.mmap_desc_size))) {
-    uint64_t crt_size = desc->numberofpages * 4;
-    if (crt_size > max_size)
-      max_size = crt_size;
-    if (crt_size < min_size)
-      min_size = crt_size;
-  }
-  cputln("max & min page frames (KB):");
-  cputln(citoaul(max_size, buff, 10));
-  cputln(citoaul(min_size, buff, 10));
+  ppa_init(boot_info.mmap, boot_info.mmap_size, boot_info.mmap_desc_size);
+  // uint64_t kernel_size = &_kernel_end - &_kernel_start;
+  // ppa_lckn(&_kernel_start, kernel_size / 4096 + 1);
 
-  cputln("testing bitmap...");
-  ppa_init_bitmap(test_buffer, 30 * 32);
-  for (int i = 3; i < 30 * 32; i += 32) {
-    ppa_bitmap_set(i, 1);
+  cputs("Used: ");
+  cputs(citoaul(ppa_get_mem_used() / 1024, buff, 10));
+  cputs(" KB   Reserved: ");
+  cputs(citoaul(ppa_get_mem_rsvd() / 1024, buff, 10));
+  cputs(" KB   Free: ");
+  cputs(citoaul(ppa_get_mem_free() / 1024, buff, 10));
+  cputs(" KB   Total: ");
+  cputs(citoaul(ppa_get_mem_total() / 1024, buff, 10));
+  cputln(" KB.");
+
+  cputln("requesting 20 pages...");
+  for (int i = 0; i < 20; i++) {
+    void *addr = ppa_request();
+    cputln(citoaul((uint64_t)addr, buff, 16));
   }
-  for (int i = 0; i < 30 * 32; i++) {
-    int crt = ppa_bitmap_get(i);
-    cputs(crt ? "1 " : "0 ");
-  }
+
+  cputs("Used: ");
+  cputs(citoaul(ppa_get_mem_used() / 1024, buff, 10));
+  cputs(" KB   Reserved: ");
+  cputs(citoaul(ppa_get_mem_rsvd() / 1024, buff, 10));
+  cputs(" KB   Free: ");
+  cputs(citoaul(ppa_get_mem_free() / 1024, buff, 10));
+  cputs(" KB   Total: ");
+  cputs(citoaul(ppa_get_mem_total() / 1024, buff, 10));
+  cputln(" KB.");
 
   cputln("Done");
   for (;;)

@@ -1,2 +1,8 @@
 /.vscode
 /.idea
+*.o
+*.s
+*.so
+*.efi
+*.img
+*.elf
