@@ -10,7 +10,8 @@ ifeq ($(shell uname),Darwin)
 	OBJCOPY=x86_64-unknown-linux-gnu-objcopy
 else
 	OBJCOPY=objcopy
-	CC=x86_64-unknown-linux-gnu-gcc
+	ARCH=x86_64
+	MAKE=make
 endif
 
 CFLAGS=-Ignu-efi/inc \
