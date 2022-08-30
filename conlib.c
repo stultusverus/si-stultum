@@ -32,13 +32,13 @@ int cputc(int ch) {
   return ch;
 }
 
-int cputs(char *s) {
+int cputs(const char *s) {
   while (*s)
     cputc(*s++);
   return 0;
 }
 
-int cputln(char *s) {
+int cputln(const char *s) {
   cputs(s);
   cputc('\n');
   return 0;

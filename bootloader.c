@@ -104,7 +104,7 @@ efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable) {
     switch (program_headers[i].p_type) {
     case PT_LOAD: {
       Print(L"[PT_LOAD]\n\r");
-      int pages = (program_headers[i].p_memsz + 0x1000 - 1) / 0x1000;
+      UINTN pages = (program_headers[i].p_memsz + 0x1000 - 1) / 0x1000;
       Elf64_Addr segment = program_headers[i].p_paddr;
       uefi_call_wrapper(ST->BootServices->AllocatePages, 3, AllocateAddress,
                         EfiLoaderData, pages, &segment);
@@ -140,14 +140,22 @@ efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable) {
   uefi_call_wrapper(BS->GetMemoryMap, 5, &efi_memory_map_size, efi_memory_map,
                     &efi_map_key, &efi_descriptor_size,
                     &efi_descriptor_version);
+EFI_MMAP_LOAD_AGAIN:
   efi_memory_map = AllocatePool(efi_memory_map_size);
   status = uefi_call_wrapper(BS->GetMemoryMap, 5, &efi_memory_map_size,
                              efi_memory_map, &efi_map_key, &efi_descriptor_size,
                              &efi_descriptor_version);
-  if (efi_memory_map == NULL ||
-      EFI_ERROR(status) && status != EFI_BUFFER_TOO_SMALL) {
+  if (status == EFI_BUFFER_TOO_SMALL)
+    goto EFI_MMAP_LOAD_AGAIN;
+  if (efi_memory_map == NULL || EFI_ERROR(status)) {
     Print(L"Unable to load EFI Memory Map.\n\r");
     goto END;
+  }
+
+  for (EFI_MEMORY_DESCRIPTOR *it = efi_memory_map;
+       (UINT8 *)it < (UINT8 *)efi_memory_map + efi_memory_map_size;
+       it = ((EFI_MEMORY_DESCRIPTOR *)(((UINT8 *)it) + efi_descriptor_size))) {
+    Print(L"Descriptor [0x%x], type=%u\n\r", it, it->Type);
   }
 
   Print(L"EFI MEMORY MAP LOADED, GOING TO KERNEL\n\r");

@@ -5,8 +5,8 @@
 #include "ssfn.h"
 
 int cputc(int ch);
-int cputs(char *s);
-int cputln(char *s);
+int cputs(const char *s);
+int cputln(const char *s);
 void cinit(ssfn_font_t *font, void *fbbase, int w, int h, int p);
 char *citoa(long value, char *buff, int base);
 char *citoaul(unsigned long value, char *buff, int base);
