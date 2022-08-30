@@ -35,8 +35,8 @@ $(OSIMG): bootloader.efi kernel.elf
 	mcopy -i $(OSIMG) kernel.elf ::
 	mcopy -i $(OSIMG) bootloader.efi ::/EFI/BOOT/BOOTX64.EFI
 
-kernel.elf: kernel.o kernel.ld font.o
-	$(LD) -T $(word 2,$^) -static -Bsymbolic -nostdlib -o kernel.elf kernel.o font.o
+kernel.elf: kernel.o kernel.ld font.o conlib.o
+	$(LD) -T $(word 2,$^) -static -Bsymbolic -nostdlib -o kernel.elf kernel.o font.o conlib.o
 
 font.o: u_vga16.sfn
 	$(LD) -r -b binary -o $@ $<
