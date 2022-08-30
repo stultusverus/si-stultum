@@ -35,34 +35,39 @@ int cputc(int ch) {
 int cputs(char *s) {
   while (*s)
     cputc(*s++);
+  return 0;
+}
+
+int cputln(char *s) {
+  cputs(s);
   cputc('\n');
   return 0;
 }
 
-char *citoa(int value, char *str, int base) {
+char *citoa(long value, char *buff, int base) {
   if (value < 0) {
-    citoaul(-value, str + 1, base);
-    str[0] = '-';
-    return str;
+    citoaul(-value, buff + 1, base);
+    buff[0] = '-';
+    return buff;
   } else {
-    return citoaul(value, str, base);
+    return citoaul(value, buff, base);
   }
 }
 
-char *citoaul(unsigned long value, char *str, int base) {
+char *citoaul(unsigned long value, char *buff, int base) {
   unsigned long sum = value;
   int digit;
   int i = 0;
   do {
     digit = sum % base;
     if (digit < 0XA)
-      str[i++] = '0' + digit;
+      buff[i++] = '0' + digit;
     else
-      str[i++] = 'A' + digit - 0xA;
+      buff[i++] = 'A' + digit - 0xA;
     sum /= base;
   } while (sum);
-  str[i] = '\0';
-  return cstrrev(str);
+  buff[i] = '\0';
+  return cstrrev(buff);
 }
 
 int cstrlen(const char *str) {
@@ -83,4 +88,26 @@ char *cstrrev(char *str) {
     str[j] = a;
   }
   return str;
+}
+
+char *cftoa(double value, char *buff) { return cftoan(value, buff, 8); }
+
+char *cftoan(double value, char *buff, int n) {
+  long int_part;
+  char *cp = buff;
+  int_part = value;
+  value -= int_part;
+  citoa(int_part, buff, 10);
+  if (value < 0)
+    value = -value;
+  cp += cstrlen(buff);
+  *cp++ = '.';
+  while (n--) {
+    value *= 10;
+    int digit = value;
+    *cp++ = '0' + digit;
+    value -= digit;
+  }
+  *cp = '\0';
+  return buff;
 }

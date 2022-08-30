@@ -70,4 +70,4 @@ clean:
 	$(MAKE) -C gnu-efi clean
 	rm -f $(OSIMG) *.so bootloader.efi kernel.elf *.o
 
-.SECONDARY:
+# .SECONDARY:

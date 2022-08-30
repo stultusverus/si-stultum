@@ -120,6 +120,7 @@ efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable) {
     }
   }
   Print(L"Done loading kernel.\n\r");
+  Print(L"Initializing GOP...\n\r");
 
   EFI_STATUS status = initialize_gop();
   if (EFI_ERROR(status)) {
@@ -129,10 +130,40 @@ efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable) {
   Print(L"Initialized GOP.\n\rFramebuffer address 0x%x size %d, width %d "
         L"height %d pixelsperline %d\n\r",
         fb.fbbase, fb.fbsize, fb.width, fb.height, fb.ppsl);
-  //   uefi_call_wrapper(BS->Stall, 1, 5000000);
-  void (*kernel_entry)(FrameBuffer *) =
-      ((__attribute__((sysv_abi)) void (*)(FrameBuffer *))header.e_entry);
-  kernel_entry(&fb);
+
+  EFI_MEMORY_DESCRIPTOR *efi_memory_map = NULL;
+  UINTN efi_memory_map_size = 0; // MUST!
+  UINTN efi_map_key;
+  UINTN efi_descriptor_size = sizeof(EFI_MEMORY_DESCRIPTOR);
+  UINT32 efi_descriptor_version;
+
+  uefi_call_wrapper(BS->GetMemoryMap, 5, &efi_memory_map_size, efi_memory_map,
+                    &efi_map_key, &efi_descriptor_size,
+                    &efi_descriptor_version);
+  efi_memory_map = AllocatePool(efi_memory_map_size);
+  status = uefi_call_wrapper(BS->GetMemoryMap, 5, &efi_memory_map_size,
+                             efi_memory_map, &efi_map_key, &efi_descriptor_size,
+                             &efi_descriptor_version);
+  if (efi_memory_map == NULL ||
+      EFI_ERROR(status) && status != EFI_BUFFER_TOO_SMALL) {
+    Print(L"Unable to load EFI Memory Map.\n\r");
+    goto END;
+  }
+
+  Print(L"EFI MEMORY MAP LOADED, GOING TO KERNEL\n\r");
+  for (int i = 3; i > 0; i--) {
+    Print(L"%d\r", i);
+    uefi_call_wrapper(BS->Stall, 1, 1000000);
+  }
+  uefi_call_wrapper(ST->ConOut->ClearScreen, 1, ST->ConOut);
+
+  void (*kernel_entry)(BootInfo) =
+      ((__attribute__((sysv_abi)) void (*)(BootInfo))header.e_entry);
+
+  kernel_entry((BootInfo){.fb = &fb,
+                          .mmap = efi_memory_map,
+                          .mmap_size = efi_memory_map_size,
+                          .mmap_desc_size = efi_descriptor_size});
 
 END:
   for (;;)

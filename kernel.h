@@ -9,4 +9,11 @@ typedef struct {
   unsigned int ppsl;
 } FrameBuffer;
 
+typedef struct {
+  FrameBuffer *fb;
+  void *mmap;
+  unsigned long mmap_size;
+  unsigned long mmap_desc_size;
+} BootInfo;
+
 #endif // __KERNEL_H__
