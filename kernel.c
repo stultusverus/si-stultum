@@ -10,6 +10,8 @@ static inline void plotpixel32(FrameBuffer *fb, int x, int y,
   *((unsigned int *)(fb->fbbase + 4 * fb->ppsl * y + 4 * x)) = pixel;
 }
 
+uint32_t test_buffer[30];
+
 void _start(BootInfo boot_info) {
   char buff[100];
   uint64_t mmap_entries = boot_info.mmap_size / boot_info.mmap_desc_size;
@@ -45,5 +47,17 @@ void _start(BootInfo boot_info) {
   cputln(citoaul(max_size, buff, 10));
   cputln(citoaul(min_size, buff, 10));
 
+  cputln("testing bitmap...");
+  ppa_init_bitmap(test_buffer, 30 * 32);
+  for (int i = 3; i < 30 * 32; i += 32) {
+    ppa_bitmap_set(i, 1);
+  }
+  for (int i = 0; i < 30 * 32; i++) {
+    int crt = ppa_bitmap_get(i);
+    cputs(crt ? "1 " : "0 ");
+  }
+
   cputln("Done");
+  for (;;)
+    ;
 }
