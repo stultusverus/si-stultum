@@ -1,6 +1,17 @@
 OSNAME:=slowos
 OSIMG:=$(OSNAME).img
 
+ifeq ($(shell uname),Darwin)
+	ARCH=x86_64
+	MAKE=gmake
+	CC=x86_64-unknown-linux-gnu-gcc
+	AR=x86_64-unknown-linux-gnu-ar
+	LD=x86_64-unknown-linux-gnu-ld
+	OBJCOPY=x86_64-unknown-linux-gnu-objcopy
+else
+	OBJCOPY=objcopy
+endif
+
 CFLAGS=-Ignu-efi/inc \
 	-fpic -ffreestanding \
 	-fno-stack-protector \
@@ -25,7 +36,7 @@ gnu-efi/%: libgnuefi
 
 .PHONY: libgnuefi
 libgnuefi:
-	$(MAKE) -C gnu-efi
+	$(MAKE) -C gnu-efi ARCH=$(ARCH) MAKE=$(MAKE) CC=$(CC) AR=$(AR) LD=$(LD)
 
 $(OSIMG): bootloader.efi kernel.elf
 	dd if=/dev/zero of=$(OSIMG) bs=512 count=93750
@@ -45,7 +56,7 @@ font.o: u_vga16.sfn
 	$(LD) -T $(word 2,$^) -static -Bsymbolic -nostdlib -o $@ $<
 
 %.efi: %.so
-	objcopy -j .text \
+	$(OBJCOPY) -j .text \
 		-j .sdata -j .data \
 		-j .dynamic -j .dynsym  \
 		-j .rel -j .rela \
