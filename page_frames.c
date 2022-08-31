@@ -1,4 +1,4 @@
-#include "kermem.h"
+#include "page_frames.h"
 #include "efimem.h"
 
 Bitmap ppa_bitmap = {
@@ -59,7 +59,10 @@ void ppa_init(EfiMemoryDescriptor *mmap, uint64_t mmap_size,
   uint64_t total_pages = mem_total / 4096;
   ppa_init_bitmap(largest_segment, total_pages);
 
-  ppa_lckn(ppa_bitmap._data, ppa_bitmap._size / 1024 + 1);
+  uint64_t bitmap_pages =
+      ppa_bitmap._size / 1024 + (ppa_bitmap._size % 1024 ? 1 : 0);
+  ppa_lckn(ppa_bitmap._data, bitmap_pages);
+  ppa_lck(&ppa_bitmap);
 
   for (EfiMemoryDescriptor *desc = mmap;
        (uint8_t *)desc < (uint8_t *)mmap + mmap_size;

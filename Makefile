@@ -31,7 +31,7 @@ LDFLAGS=-shared -Bsymbolic \
 LOADLIBES=-lgnuefi -lefi
 LDLIBS=$(LOADLIBES)
 
-KERNEL_OBJS=kernel.o font.o conlib.o efimem.o kermem.o
+KERNEL_OBJS=kernel.o font.o conlib.o efimem.o page_frames.o
 
 .PHONY: all
 all: $(OSIMG)

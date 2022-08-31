@@ -1,5 +1,5 @@
-#ifndef __KERMEM_H__
-#define __KERMEM_H__
+#ifndef __PAGE_FRAMES_H__
+#define __PAGE_FRAMES_H__
 
 #include "efimem.h"
 #include <stdint.h>
@@ -36,4 +36,4 @@ void *ppa_request();
 uint64_t get_memory_size(EfiMemoryDescriptor *mmap, uint64_t mmap_size,
                          uint64_t mmap_desc_size);
 
-#endif
+#endif // __PAGE_FRAMES_H__
