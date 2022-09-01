@@ -171,14 +171,14 @@ void ppa_ursvn(void *addr, uint64_t n) {
 }
 
 void *ppa_request() {
-  for (uint64_t i = last_hit; i < ppa_bitmap._size; i++) {
-    if (!~ppa_bitmap._data[i])
+  for (uint64_t index_hi = last_hit; index_hi < ppa_bitmap._size; index_hi++) {
+    if (!~ppa_bitmap._data[index_hi])
       continue;
     for (uint64_t index_lo = 0; index_lo < 32; index_lo++) {
-      uint64_t index = i * 32 + index_lo;
+      uint64_t index = index_hi * 32 + index_lo;
       if (ppa_bitmap_get(index))
         continue;
-      last_hit = i + 1;
+      last_hit = index;
       ppa_lck((void *)(index * 4096));
       return (void *)(index * 4096);
     }
