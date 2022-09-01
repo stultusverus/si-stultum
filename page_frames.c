@@ -171,7 +171,8 @@ void ppa_ursvn(void *addr, uint64_t n) {
 }
 
 void *ppa_request() {
-  for (uint64_t index_hi = last_hit; index_hi < ppa_bitmap._size; index_hi++) {
+  for (uint64_t index_hi = last_hit >> 5; index_hi < ppa_bitmap._size;
+       index_hi++) {
     if (!~ppa_bitmap._data[index_hi])
       continue;
     for (uint64_t index_lo = 0; index_lo < 32; index_lo++) {
@@ -184,4 +185,19 @@ void *ppa_request() {
     }
   }
   return 0;
+}
+
+void *ppa_memset(void *dest, uint8_t val, uint64_t len) {
+  register uint8_t *ptr = (uint8_t *)dest;
+  while (len-- > 0)
+    *ptr++ = val;
+  return dest;
+}
+
+void *ppa_memcpy(void *dest, const void *src, uint64_t len) {
+  uint8_t *d = dest;
+  uint8_t const *s = src;
+  while (len--)
+    *d++ = *s++;
+  return dest;
 }

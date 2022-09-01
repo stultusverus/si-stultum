@@ -33,6 +33,9 @@ void ppa_ursv(void *addr);
 void ppa_ursvn(void *addr, uint64_t n);
 void *ppa_request();
 
+void *ppa_memset(void *dest, uint8_t val, uint64_t len);
+void *ppa_memcpy(void *dest, const void *src, uint64_t len);
+
 uint64_t get_memory_size(EfiMemoryDescriptor *mmap, uint64_t mmap_size,
                          uint64_t mmap_desc_size);
 

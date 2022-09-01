@@ -226,10 +226,10 @@ efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable) {
   }
 
   Print(L"EFI MEMORY MAP LOADED, GOING TO KERNEL...\n\r");
-  for (int i = 3; i > 0; i--) {
-    Print(L"%02d\r", i);
-    uefi_call_wrapper(BS->Stall, 1, 1000000);
-  }
+  // for (int i = 3; i > 0; i--) {
+  //   Print(L"%02d\r", i);
+  //   uefi_call_wrapper(BS->Stall, 1, 1000000);
+  // }
   uefi_call_wrapper(ST->ConOut->ClearScreen, 1, ST->ConOut);
 
   KERNEL_ENTRY KernelEntry = GetKernelEntry(ImageHandle, &Status);

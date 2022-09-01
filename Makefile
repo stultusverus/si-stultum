@@ -31,13 +31,15 @@ LDFLAGS=-shared -Bsymbolic \
 LOADLIBES=-lgnuefi -lefi
 LDLIBS=$(LOADLIBES)
 
-KERNEL_OBJS=kernel.o font.o conlib.o efimem.o page_frames.o
+KERNEL_OBJS=kernel.o font.o conlib.o efimem.o page_frames.o page_map.o
 
 .PHONY: all
 all: $(OSIMG)
 
 $(OSIMG): bootloader.efi kernel.elf
-	dd if=/dev/zero of=$(OSIMG) bs=512 count=93750
+	if [ ! -f $(OSIMG) ];then \
+		dd if=/dev/zero of=$(OSIMG) bs=512 count=93750; \
+	fi
 	mformat -i $(OSIMG) ::
 	mmd -i $(OSIMG) ::/EFI
 	mmd -i $(OSIMG) ::/EFI/BOOT
