@@ -36,12 +36,6 @@ KERNEL_OBJS=kernel.o font.o conlib.o efimem.o page_frames.o
 .PHONY: all
 all: $(OSIMG)
 
-gnu-efi/%: libgnuefi
-
-.PHONY: libgnuefi
-libgnuefi:
-	$(MAKE) -C gnu-efi ARCH=$(ARCH) MAKE=$(MAKE) CC=$(CC) AR=$(AR) LD=$(LD)
-
 $(OSIMG): bootloader.efi kernel.elf
 	dd if=/dev/zero of=$(OSIMG) bs=512 count=93750
 	mformat -i $(OSIMG) ::
@@ -70,7 +64,10 @@ font.o: u_vga16.sfn
 		--subsystem=10 \
 		$< $@
 
-%.so: %.o libgnuefi
+%.so: %.o
+	if [ ! -f gnu-efi/x86_64/gnuefi/crt0-efi-x86_64.o ];then \
+		$(MAKE) -C gnu-efi ARCH=$(ARCH) MAKE=$(MAKE) CC=$(CC) AR=$(AR) LD=$(LD) ;\
+	fi
 	$(LD) $(LDFLAGS) $< -o $@ $(LDLIBS) 
 
 qemu: $(OSIMG)
@@ -85,4 +82,3 @@ clean:
 	$(MAKE) -C gnu-efi clean
 	rm -f $(OSIMG) *.so bootloader.efi kernel.elf *.o
 
-# .SECONDARY:
