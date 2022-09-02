@@ -7,6 +7,9 @@ extern uint8_t _binary_assets_u_vga16_sfn_start;
 extern uint8_t _kernel_start;
 extern uint8_t _kernel_end;
 
+void clear_interrupts();
+void set_pml4(PageTable *);
+
 char buff[100];
 const char print_str[] = "DIXITQVE DEVS FIAT LVX ET FACTA EST LVX";
 
@@ -36,7 +39,9 @@ void init_kernel(BootInfo boot_info) {
   for (uint64_t addr = fbbase; addr < fbbase + fbsize; addr += 4096) {
     pmm_map_memory((void *)addr, (void *)addr);
   }
-  asm("mov %0, %%cr3" : : "r"(PML4));
+
+  set_pml4(PML4);
+  clear_interrupts();
 }
 
 void debug_func(uint64_t vaddr) {

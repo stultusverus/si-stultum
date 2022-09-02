@@ -4,8 +4,9 @@ IMGDIR=img
 OSNAME=si-stultum
 OSIMG=$(IMGDIR)/$(OSNAME).img
 
+ARCH=x86_64
+
 ifeq ($(shell uname),Darwin)
-	ARCH=x86_64
 	MAKE=gmake
 	CC=x86_64-unknown-linux-gnu-gcc
 	AR=x86_64-unknown-linux-gnu-ar
@@ -13,9 +14,10 @@ ifeq ($(shell uname),Darwin)
 	OBJCOPY=x86_64-unknown-linux-gnu-objcopy
 else
 	OBJCOPY=objcopy
-	ARCH=x86_64
 	MAKE=make
 endif
+
+ASM=nasm
 
 CFLAGS=-Ignu-efi/inc \
 	-fpic -ffreestanding \
@@ -54,8 +56,11 @@ $(OSIMG): $(OBJDIR)/bootloader.efi $(OBJDIR)/kernel.elf
 $(OBJDIR):
 	mkdir -p $@
 
-$(OBJDIR)/kernel.elf: $(SRCDIR)/kernel.ld $(KERNEL_OBJS) $(OBJDIR)
-	$(LD) -T $< -static -Bsymbolic -nostdlib -o $@ $(KERNEL_OBJS)
+$(OBJDIR)/kernel.elf: $(SRCDIR)/kernel.ld $(KERNEL_OBJS) $(OBJDIR)/asm_utils.o $(OBJDIR)
+	$(LD) -T $< -static -Bsymbolic -nostdlib -o $@ $(OBJDIR)/asm_utils.o $(KERNEL_OBJS)
+
+$(OBJDIR)/asm_utils.o: $(SRCDIR)/asm_utils.asm
+	$(ASM) $(ASFLAGS) $< -f elf64 -o $@
 
 $(OBJDIR)/font.o: assets/u_vga16.sfn  $(OBJDIR)
 	$(LD) -r -b binary -o $@ $<
