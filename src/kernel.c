@@ -3,7 +3,7 @@
 #include "page_frames.h"
 #include "page_map.h"
 
-extern uint8_t _binary_u_vga16_sfn_start;
+extern uint8_t _binary_assets_u_vga16_sfn_start;
 extern uint8_t _kernel_start;
 extern uint8_t _kernel_end;
 
@@ -17,8 +17,9 @@ void init_kernel(BootInfo boot_info) {
   uint64_t fbbase = (uint64_t)boot_info.fb->fbbase;
   uint64_t fbsize = (uint64_t)boot_info.fb->fbsize + 4096;
 
-  cinit((ssfn_font_t *)&_binary_u_vga16_sfn_start, (void *)boot_info.fb->fbbase,
-        boot_info.fb->width, boot_info.fb->height, boot_info.fb->ppsl * 4);
+  cinit((ssfn_font_t *)&_binary_assets_u_vga16_sfn_start,
+        (void *)boot_info.fb->fbbase, boot_info.fb->width, boot_info.fb->height,
+        boot_info.fb->ppsl * 4);
 
   ppa_init(boot_info.mmap, boot_info.mmap_size, boot_info.mmap_desc_size);
   ppa_lckn(&_kernel_start, kernel_pages);

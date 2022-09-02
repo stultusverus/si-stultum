@@ -1,5 +1,8 @@
-OSNAME:=slowos
-OSIMG:=$(OSNAME).img
+SRCDIR=src
+OBJDIR=obj
+IMGDIR=img
+OSNAME=si-stultum
+OSIMG=$(IMGDIR)/$(OSNAME).img
 
 ifeq ($(shell uname),Darwin)
 	ARCH=x86_64
@@ -31,31 +34,33 @@ LDFLAGS=-shared -Bsymbolic \
 LOADLIBES=-lgnuefi -lefi
 LDLIBS=$(LOADLIBES)
 
-KERNEL_OBJS=kernel.o font.o conlib.o efimem.o page_frames.o page_map.o
+KERNEL_TARGETS=kernel font conlib efimem page_frames page_map
+KERNEL_OBJS=$(patsubst %,obj/%.o,$(KERNEL_TARGETS))
 
 .PHONY: all
 all: $(OSIMG)
 
-$(OSIMG): bootloader.efi kernel.elf
+$(OSIMG): $(OBJDIR)/bootloader.efi $(OBJDIR)/kernel.elf
 	if [ ! -f $(OSIMG) ];then \
+		mkdir -p $(IMGDIR); \
 		dd if=/dev/zero of=$(OSIMG) bs=512 count=93750; \
 	fi
 	mformat -i $(OSIMG) ::
 	mmd -i $(OSIMG) ::/EFI
 	mmd -i $(OSIMG) ::/EFI/BOOT
-	mcopy -i $(OSIMG) kernel.elf ::
-	mcopy -i $(OSIMG) bootloader.efi ::/EFI/BOOT/BOOTX64.EFI
+	mcopy -i $(OSIMG) $(OBJDIR)/kernel.elf ::
+	mcopy -i $(OSIMG) $(OBJDIR)/bootloader.efi ::/EFI/BOOT/BOOTX64.EFI
 
-kernel.elf: kernel.ld $(KERNEL_OBJS)
-	$(LD) -T $< -static -Bsymbolic -nostdlib -o kernel.elf $(KERNEL_OBJS)
+$(OBJDIR):
+	mkdir -p $@
 
-font.o: u_vga16.sfn
+$(OBJDIR)/kernel.elf: $(SRCDIR)/kernel.ld $(KERNEL_OBJS) $(OBJDIR)
+	$(LD) -T $< -static -Bsymbolic -nostdlib -o $@ $(KERNEL_OBJS)
+
+$(OBJDIR)/font.o: assets/u_vga16.sfn  $(OBJDIR)
 	$(LD) -r -b binary -o $@ $<
 
-%.elf: %.o %.ld
-	$(LD) -T $(word 2,$^) -static -Bsymbolic -nostdlib -o $@ $<
-
-%.efi: %.so
+$(OBJDIR)/%.efi: $(OBJDIR)/%.so  $(OBJDIR)
 	$(OBJCOPY) -j .text \
 		-j .sdata -j .data \
 		-j .dynamic -j .dynsym  \
@@ -66,21 +71,25 @@ font.o: u_vga16.sfn
 		--subsystem=10 \
 		$< $@
 
-%.so: %.o
+$(OBJDIR)/%.so: $(OBJDIR)/%.o  $(OBJDIR)
 	if [ ! -f gnu-efi/x86_64/gnuefi/crt0-efi-x86_64.o ];then \
 		$(MAKE) -C gnu-efi ARCH=$(ARCH) MAKE=$(MAKE) CC=$(CC) AR=$(AR) LD=$(LD) ;\
 	fi
 	$(LD) $(LDFLAGS) $< -o $@ $(LDLIBS) 
 
+$(OBJDIR)/%.o: $(SRCDIR)/%.c
+	$(CC) $(CFLAGS) -c $< -o $@
+
 qemu: $(OSIMG)
 	qemu-system-x86_64 \
 		-m 256M -cpu qemu64 -net none \
 		-drive "file=$(OSIMG),format=raw" \
-		-drive if=pflash,format=raw,unit=0,file=OVMF_CODE.fd,readonly=on\
-		-drive if=pflash,format=raw,unit=1,file=OVMF_VARS.fd
+		-drive if=pflash,format=raw,unit=0,file=OVMF/OVMF_CODE.fd,readonly=on\
+		-drive if=pflash,format=raw,unit=1,file=OVMF/OVMF_VARS.fd
 
 .PHONY: clean
 clean:
 	$(MAKE) -C gnu-efi clean
-	rm -f $(OSIMG) *.so bootloader.efi kernel.elf *.o
+	rm -rf $(OBJDIR)
+	rm -rf $(IMGDIR)
 
