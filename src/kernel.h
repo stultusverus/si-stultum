@@ -1,9 +1,8 @@
 #ifndef __KERNEL_H__
 #define __KERNEL_H__
 
-#include <stdint.h>
-
 #include "efimem.h"
+#include <stdint.h>
 
 typedef struct {
   uint64_t fbbase;

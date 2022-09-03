@@ -25,7 +25,8 @@ CFLAGS=-Ignu-efi/inc \
 	-fno-stack-check \
 	-mno-red-zone \
 	-fshort-wchar \
-	-maccumulate-outgoing-args
+	-maccumulate-outgoing-args \
+	-Werror -Wall -O3
 
 LDFLAGS=-shared -Bsymbolic \
 	-Lgnu-efi/x86_64/lib \
@@ -36,7 +37,7 @@ LDFLAGS=-shared -Bsymbolic \
 LOADLIBES=-lgnuefi -lefi
 LDLIBS=$(LOADLIBES)
 
-KERNEL_TARGETS=kernel font conlib efimem page_frames page_map
+KERNEL_TARGETS=kernel font conlib efimem page_frames page_map gdt
 KERNEL_OBJS=$(patsubst %,obj/%.o,$(KERNEL_TARGETS))
 
 .PHONY: all
@@ -87,6 +88,13 @@ $(OBJDIR)/%.o: $(SRCDIR)/%.c
 
 qemu: $(OSIMG)
 	qemu-system-x86_64 \
+		-m 256M -cpu qemu64 -net none \
+		-drive "file=$(OSIMG),format=raw" \
+		-drive if=pflash,format=raw,unit=0,file=OVMF/OVMF_CODE.fd,readonly=on\
+		-drive if=pflash,format=raw,unit=1,file=OVMF/OVMF_VARS.fd
+
+qemu-debug: $(OSIMG)
+	qemu-system-x86_64 -S -s\
 		-m 256M -cpu qemu64 -net none \
 		-drive "file=$(OSIMG),format=raw" \
 		-drive if=pflash,format=raw,unit=0,file=OVMF/OVMF_CODE.fd,readonly=on\

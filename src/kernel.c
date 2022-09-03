@@ -1,5 +1,6 @@
 #include "kernel.h"
 #include "conlib.h"
+#include "gdt.h"
 #include "page_frames.h"
 #include "page_map.h"
 
@@ -14,6 +15,7 @@ char buff[100];
 const char print_str[] = "DIXITQVE DEVS FIAT LVX ET FACTA EST LVX";
 
 void init_kernel(BootInfo boot_info) {
+
   uint64_t kernel_size = (uint64_t)&_kernel_end - (uint64_t)&_kernel_start;
   uint64_t kernel_pages =
       kernel_size / 4096 + (kernel_size % 4096 != 0 ? 1 : 0);
@@ -41,7 +43,7 @@ void init_kernel(BootInfo boot_info) {
   }
 
   set_pml4(PML4);
-  clear_interrupts();
+  // clear_interrupts();
 }
 
 void debug_func(uint64_t vaddr) {
@@ -54,7 +56,27 @@ void debug_func(uint64_t vaddr) {
 
 void _start(BootInfo boot_info) {
 
+  GDTDescriptor gdt_desc = {
+      .size = sizeof(GDT) - 1,
+      .offset = (uint64_t)&DEFAULT_GDT,
+  };
+  // ppa_memset((uint8_t *)&DEFAULT_GDT + 64 * 6, 0, 4096 - 64 * 6);
+  // set_gdt(&gdt_desc);
+
   init_kernel(boot_info);
+  cinit((ssfn_font_t *)&_binary_assets_u_vga16_sfn_start,
+        (void *)boot_info.fb->fbbase, boot_info.fb->width, boot_info.fb->height,
+        boot_info.fb->ppsl * 4);
+
+  cputs(citoa(gdt_desc.size, buff, 10));
+  cputs(" ");
+  cputln(citoa(gdt_desc.offset, buff, 16));
+  uint64_t *gdt_ent_p = (uint64_t *)gdt_desc.offset;
+  for (int i = 0; i < 64; i++) {
+    cputs(citoaul(gdt_ent_p[i], buff, 16));
+    cputs(" ");
+  }
+  cputln("");
 
   cputs("[MEM] Used: ");
   cputs(citoaul(ppa_get_mem_used() / 1024, buff, 10));

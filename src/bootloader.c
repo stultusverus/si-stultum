@@ -83,8 +83,6 @@ EFI_FILE_HANDLE GetVolume(EFI_HANDLE Image) {
   EFI_FILE_HANDLE Volume;
   EFI_LOADED_IMAGE *LoadedImage;
   EFI_GUID LipGuid = EFI_LOADED_IMAGE_PROTOCOL_GUID;
-  EFI_FILE_IO_INTERFACE *IOVolume;
-  EFI_GUID FileSystemGuid = EFI_SIMPLE_FILE_SYSTEM_PROTOCOL_GUID;
   uefi_call_wrapper(BS->HandleProtocol, 3, Image, &LipGuid,
                     (void **)&LoadedImage);
   Volume = LibOpenRoot(LoadedImage->DeviceHandle);
@@ -114,7 +112,7 @@ EFI_STATUS InitializeGop(FrameBuffer *frameBuffer) {
   EFI_GRAPHICS_OUTPUT_PROTOCOL *Gop;
   EFI_STATUS Status;
   EFI_GRAPHICS_OUTPUT_MODE_INFORMATION *Info;
-  UINTN SizeOfInfo, NumModes, NativeMode;
+  UINTN SizeOfInfo;
 
   Gop = GetGop();
   if (Gop == NULL)
@@ -164,7 +162,7 @@ KERNEL_ENTRY GetKernelEntry(EFI_HANDLE ImageHandle, EFI_STATUS *Status) {
   Elf64_Ehdr Headers;
   UINT64 HeaderSize = sizeof(Headers);
   uefi_call_wrapper(KernelFile->Read, 3, KernelFile, &HeaderSize, &Headers);
-  if (strncmpa(&Headers.e_ident[EI_MAG0], ELFMAG, SELFMAG) ||
+  if (strncmpa(&Headers.e_ident[EI_MAG0], (CHAR8 *)ELFMAG, SELFMAG) ||
       Headers.e_ident[EI_CLASS] != ELFCLASS64 ||
       Headers.e_ident[EI_DATA] != ELFDATA2LSB || Headers.e_type != ET_EXEC ||
       Headers.e_machine != EM_X86_64 || Headers.e_version != EV_CURRENT) {
@@ -217,7 +215,6 @@ efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable) {
   EFI_MEMORY_DESCRIPTOR *EfiMemoryMap = NULL;
   UINTN EfiMemoryMapSize = 0;
   UINTN EfiMemoryMapDescriptorSize = sizeof(EFI_MEMORY_DESCRIPTOR);
-  UINT32 EfiMemoriMapDescriptorVersion;
 
   EfiMemoryMap = GetMemoryMap(&EfiMemoryMapSize, &EfiMemoryMapDescriptorSize);
   if (EfiMemoryMap == NULL) {

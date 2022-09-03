@@ -42,7 +42,6 @@ PageTable *pmm_init_pml4(PageTable *addr) {
 void pmm_map_memory(void *vaddr, void *paddr) {
   PageDirectoryEntry pde;
   PageTable *pdp, *pd, *pt;
-  uint64_t virtual_addr = (uint64_t)vaddr;
   uint64_t index;
 
   index = ((uint64_t)vaddr >> 39) & 0x1ff;
@@ -91,7 +90,6 @@ void pmm_map_memory(void *vaddr, void *paddr) {
 void *pmm_find_paddr(void *vaddr) {
   PageDirectoryEntry pde;
   PageTable *pdp, *pd, *pt;
-  uint64_t virtual_addr = (uint64_t)vaddr;
   uint64_t index;
 
   index = ((uint64_t)vaddr >> 39) & 0x1ff;

@@ -22,6 +22,7 @@ set_gdt:
    mov   gs, ax
    mov   ss, ax
 	 pop	 rdi
-	 push	 0x08
+	 mov rax, 0x08
+	 push	 rax
 	 push  rdi
    retfq

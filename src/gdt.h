@@ -4,30 +4,30 @@
 #include <stdint.h>
 
 typedef struct {
-  uint16_t Size;
-  uint64_t Offset;
+  uint16_t size;
+  uint64_t offset;
 } __attribute__((packed)) GDTDescriptor;
 
 typedef struct {
-  uint16_t Limit0;
-  uint16_t Base0;
-  uint8_t Base1;
-  uint8_t AccessByte;
-  uint8_t Limit1_Flags;
-  uint8_t Base2;
+  uint16_t limit0;
+  uint16_t base0;
+  uint8_t base1;
+  uint8_t accessbyte;
+  uint8_t limit1_flags;
+  uint8_t base2;
 } __attribute__((packed)) GDTEntry;
 
 typedef struct {
-  GDTEntry Null;       // 0x00
-  GDTEntry KernelCode; // 0x08
-  GDTEntry KernelData; // 0x10
-  GDTEntry UserNull;
-  GDTEntry UserCode;
-  GDTEntry UserData;
-} __attribute__((packed)) __attribute((aligned(0x1000))) GDT;
+  GDTEntry null0;
+  GDTEntry kernel_code;
+  GDTEntry kernel_data;
+  GDTEntry null1;
+  GDTEntry user_code;
+  GDTEntry user_data;
+} __attribute__((packed)) __attribute__((aligned(0x1000))) GDT;
 
 extern GDT DEFAULT_GDT;
 
-void set_gdt();
+void set_gdt(GDTDescriptor *);
 
 #endif
