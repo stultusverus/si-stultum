@@ -136,15 +136,15 @@ EFI_STATUS InitializeGop(FrameBuffer *frameBuffer) {
   return EFI_SUCCESS;
 }
 
-EFI_MEMORY_DESCRIPTOR *GetMemoryMap(UINTN *MapSize, UINTN *DescriptorSize) {
+EFI_MEMORY_DESCRIPTOR *GetMemoryMap(UINTN *MapSize, UINTN *MapKey,
+                                    UINTN *DescriptorSize) {
   EFI_STATUS Status;
   EFI_MEMORY_DESCRIPTOR *MemoryMap = NULL;
   UINT32 DescriptorVersion;
-  UINTN MapKey;
   *MapSize = sizeof(EFI_MEMORY_DESCRIPTOR);
   do {
     MemoryMap = AllocatePool(*MapSize);
-    Status = uefi_call_wrapper(BS->GetMemoryMap, 5, MapSize, MemoryMap, &MapKey,
+    Status = uefi_call_wrapper(BS->GetMemoryMap, 5, MapSize, MemoryMap, MapKey,
                                DescriptorSize, &DescriptorVersion);
     if (EFI_ERROR(Status) && Status != EFI_BUFFER_TOO_SMALL)
       return NULL;
@@ -214,9 +214,11 @@ efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable) {
 
   EFI_MEMORY_DESCRIPTOR *EfiMemoryMap = NULL;
   UINTN EfiMemoryMapSize = 0;
+  UINTN EfiMemoryMapKey;
   UINTN EfiMemoryMapDescriptorSize = sizeof(EFI_MEMORY_DESCRIPTOR);
 
-  EfiMemoryMap = GetMemoryMap(&EfiMemoryMapSize, &EfiMemoryMapDescriptorSize);
+  EfiMemoryMap = GetMemoryMap(&EfiMemoryMapSize, &EfiMemoryMapKey,
+                              &EfiMemoryMapDescriptorSize);
   if (EfiMemoryMap == NULL) {
     Print(L"Unable to load memory map.\n\r");
     goto END;
@@ -234,6 +236,8 @@ efi_main(EFI_HANDLE ImageHandle, EFI_SYSTEM_TABLE *SystemTable) {
     Print(L"Unable to find kernel entry.\n\r");
     goto END;
   }
+
+  uefi_call_wrapper(BS->ExitBootServices, 2, ImageHandle, EfiMemoryMapKey);
 
   KernelEntry((BootInfo){.fb = &frameBuffer,
                          .mmap = (EfiMemoryDescriptor *)EfiMemoryMap,

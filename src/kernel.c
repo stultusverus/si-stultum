@@ -60,8 +60,8 @@ void _start(BootInfo boot_info) {
       .size = sizeof(GDT) - 1,
       .offset = (uint64_t)&DEFAULT_GDT,
   };
-  // ppa_memset((uint8_t *)&DEFAULT_GDT + 64 * 6, 0, 4096 - 64 * 6);
-  // set_gdt(&gdt_desc);
+  ppa_memset((uint8_t *)&DEFAULT_GDT + 64 * 6, 0, 4096 - 64 * 6);
+  set_gdt(&gdt_desc);
 
   init_kernel(boot_info);
   cinit((ssfn_font_t *)&_binary_assets_u_vga16_sfn_start,
