@@ -26,7 +26,7 @@ CFLAGS=-Ignu-efi/inc \
 	-mno-red-zone \
 	-fshort-wchar \
 	-maccumulate-outgoing-args \
-	-Werror -Wall -O3
+	-Wall -O3
 
 LDFLAGS=-shared -Bsymbolic \
 	-Lgnu-efi/x86_64/lib \
@@ -37,7 +37,7 @@ LDFLAGS=-shared -Bsymbolic \
 LOADLIBES=-lgnuefi -lefi
 LDLIBS=$(LOADLIBES)
 
-KERNEL_TARGETS=kernel font conlib efimem page_frames page_map gdt
+KERNEL_TARGETS=kernel font ssfn conlib efimem page_frames page_map gdt idt interrupts
 KERNEL_OBJS=$(patsubst %,obj/%.o,$(KERNEL_TARGETS))
 
 .PHONY: all
@@ -59,6 +59,9 @@ $(OBJDIR):
 
 $(OBJDIR)/kernel.elf: $(SRCDIR)/kernel.ld $(KERNEL_OBJS) $(OBJDIR)/asm_utils.o $(OBJDIR)
 	$(LD) -T $< -static -Bsymbolic -nostdlib -o $@ $(OBJDIR)/asm_utils.o $(KERNEL_OBJS)
+
+$(OBJDIR)/interrupts.o: $(SRCDIR)/interrupts.c
+	$(CC) $(CFLAGS) -mgeneral-regs-only -c $< -o $@
 
 $(OBJDIR)/asm_utils.o: $(SRCDIR)/asm_utils.asm
 	$(ASM) $(ASFLAGS) $< -f elf64 -o $@
