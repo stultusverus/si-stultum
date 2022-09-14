@@ -11,7 +11,7 @@ extern uint8_t _binary_assets_u_vga16_sfn_end;
 extern uint8_t _kernel_start;
 extern uint8_t _kernel_end;
 
-void clear_interrupts();
+void clear_interrupts( );
 void set_pml4(PageTable *);
 
 char buff[100];
