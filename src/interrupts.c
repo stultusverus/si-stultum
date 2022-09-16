@@ -3,7 +3,7 @@
 
 __attribute__((interrupt)) void
 PageFault_Handler(struct interrupt_frame *frame) {
-  cputln("Page fault detected");
+  putln("Page fault detected");
   for (;;)
     ;
 }

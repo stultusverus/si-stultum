@@ -3,8 +3,8 @@
 
 #include "conlib.h"
 
-void cinit(ssfn_font_t *font, void *fbbase, unsigned int w, unsigned int h,
-           unsigned int p) {
+void conlib_init(ssfn_font_t *font, void *fbbase, unsigned int w,
+                 unsigned int h, unsigned int p) {
   /* set up context by global variables */
   ssfn_src = font;       /* the bitmap font to use */
   ssfn_dst.ptr = fbbase; /* framebuffer address and bytes per line */
@@ -17,12 +17,14 @@ void cinit(ssfn_font_t *font, void *fbbase, unsigned int w, unsigned int h,
   ssfn_dst.bg = 0;
 }
 
-int cputc(int ch) {
+int putc(int ch) {
   if (ch == '\n') {
     ssfn_dst.y += ssfn_src->height;
     ssfn_dst.x = 0;
   } else if (ch == '\r') {
     ssfn_dst.x = 0;
+  } else if (ch == '\t') {
+    // TODO: print \t.
   } else {
     ssfn_putc(ch);
   }
@@ -33,29 +35,29 @@ int cputc(int ch) {
   return ch;
 }
 
-int cputs(const char *s) {
+int puts(const char *s) {
   while (*s)
-    cputc(*s++);
+    putc(*s++);
   return 0;
 }
 
-int cputln(const char *s) {
-  cputs(s);
-  cputc('\n');
+int putln(const char *s) {
+  puts(s);
+  putc('\n');
   return 0;
 }
 
-char *citoa(long value, char *buff, int base) {
+char *itoas(long value, char *buff, int base) {
   if (value < 0) {
-    citoaul(-value, buff + 1, base);
+    itoa(-value, buff + 1, base);
     buff[0] = '-';
     return buff;
   } else {
-    return citoaul(value, buff, base);
+    return itoa(value, buff, base);
   }
 }
 
-char *citoaul(unsigned long value, char *buff, int base) {
+char *itoa(unsigned long value, char *buff, int base) {
   unsigned long sum = value;
   int digit;
   int i = 0;
@@ -68,7 +70,7 @@ char *citoaul(unsigned long value, char *buff, int base) {
     sum /= base;
   } while (sum);
   buff[i] = '\0';
-  return cstrrev(buff);
+  return strrev(buff);
 }
 
 int cstrlen(const char *str) {
@@ -78,7 +80,7 @@ int cstrlen(const char *str) {
   return (s - str);
 }
 
-char *cstrrev(char *str) {
+char *strrev(char *str) {
   int i;
   int j;
   unsigned char a;
@@ -91,14 +93,14 @@ char *cstrrev(char *str) {
   return str;
 }
 
-char *cftoa(double value, char *buff) { return cftoan(value, buff, 8); }
+char *ftoa(double value, char *buff) { return ftoan(value, buff, 8); }
 
-char *cftoan(double value, char *buff, int n) {
+char *ftoan(double value, char *buff, int n) {
   long int_part;
   char *cp = buff;
   int_part = value;
   value -= int_part;
-  citoa(int_part, buff, 10);
+  itoas(int_part, buff, 10);
   if (value < 0)
     value = -value;
   cp += cstrlen(buff);
@@ -111,4 +113,44 @@ char *cftoan(double value, char *buff, int n) {
   }
   *cp = '\0';
   return buff;
+}
+
+void puts_n(uint64_t n, ...) {
+  va_list args;
+  va_start(args, n);
+  while (n--) {
+    char *crt = va_arg(args, char *);
+    puts(crt);
+  }
+  va_end(args);
+}
+
+void puts_at(int x, int y, char *str) {
+  int old_x = ssfn_dst.x;
+  int old_y = ssfn_dst.y;
+  while (x < 0)
+    x += ssfn_dst.w / ssfn_src->width;
+  while (y < 0)
+    y += ssfn_dst.h / ssfn_src->height;
+  ssfn_dst.x = x * ssfn_src->width;
+  ssfn_dst.y = y * ssfn_src->height;
+  puts(str);
+  ssfn_dst.x = old_x;
+  ssfn_dst.y = old_y;
+}
+
+void set_bg(uint32_t color) { ssfn_dst.bg = color; }
+void set_fg(uint32_t color) { ssfn_dst.fg = color; }
+void set_color(uint32_t fg, uint32_t bg) {
+  ssfn_dst.fg = fg;
+  ssfn_dst.bg = bg;
+}
+uint32_t get_bg() { return ssfn_dst.bg; }
+uint32_t get_fg() { return ssfn_dst.fg; }
+
+void cls() {
+  unsigned int len = ssfn_dst.w * ssfn_dst.h;
+  register uint32_t *ptr = (uint32_t *)ssfn_dst.ptr;
+  while (len-- > 0)
+    *ptr++ = ssfn_dst.bg;
 }

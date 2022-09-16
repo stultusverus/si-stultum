@@ -11,7 +11,7 @@ extern uint8_t _binary_assets_u_vga16_sfn_end;
 extern uint8_t _kernel_start;
 extern uint8_t _kernel_end;
 
-void clear_interrupts( );
+void clear_interrupts();
 void set_pml4(PageTable *);
 
 char buff[100];
@@ -29,9 +29,9 @@ void init_kernel(BootInfo boot_info) {
   ppa_memset((uint8_t *)&DEFAULT_GDT + 64 * 6, 0, 4096 - 64 * 6);
   set_gdt(&GDTR);
   /* initialise console output */
-  cinit((ssfn_font_t *)&_binary_assets_u_vga16_sfn_start,
-        (void *)boot_info.fb->fbbase, boot_info.fb->width, boot_info.fb->height,
-        boot_info.fb->ppsl * 4);
+  conlib_init((ssfn_font_t *)&_binary_assets_u_vga16_sfn_start,
+              (void *)boot_info.fb->fbbase, boot_info.fb->width,
+              boot_info.fb->height, boot_info.fb->ppsl * 4);
   /* initialise page allocator */
   uint64_t kernel_size = (uint64_t)&_kernel_end - (uint64_t)&_kernel_start;
   uint64_t kernel_pages =
@@ -68,35 +68,61 @@ void _start(BootInfo boot_info) {
 
   init_kernel(boot_info);
 
-  cputs("[MEM] Used: ");
-  cputs(citoaul(ppa_get_mem_used() / 1024, buff, 10));
-  cputs(" KB   Reserved: ");
-  cputs(citoaul(ppa_get_mem_rsvd() / 1024, buff, 10));
-  cputs(" KB   Free: ");
-  cputs(citoaul(ppa_get_mem_free() / 1024, buff, 10));
-  cputs(" KB   Total: ");
-  cputs(citoaul(ppa_get_mem_total() / 1024, buff, 10));
-  cputln(" KB.");
+  puts("[MEM] Used: ");
+  puts(itoa(ppa_get_mem_used() / 1024, buff, 10));
+  puts(" KB   Reserved: ");
+  puts(itoa(ppa_get_mem_rsvd() / 1024, buff, 10));
+  puts(" KB   Free: ");
+  puts(itoa(ppa_get_mem_free() / 1024, buff, 10));
+  puts(" KB   Total: ");
+  puts(itoa(ppa_get_mem_total() / 1024, buff, 10));
+  putln(" KB.");
 
   char *vstr = (char *)0x600000000;
   pmm_map_memory(vstr, (void *)0x80000);
   ppa_memcpy(vstr, print_str, 40);
-  cputln(vstr);
+  putln(vstr);
 
-  cputs("[MEM] Used: ");
-  cputs(citoaul(ppa_get_mem_used() / 1024, buff, 10));
-  cputs(" KB   Reserved: ");
-  cputs(citoaul(ppa_get_mem_rsvd() / 1024, buff, 10));
-  cputs(" KB   Free: ");
-  cputs(citoaul(ppa_get_mem_free() / 1024, buff, 10));
-  cputs(" KB   Total: ");
-  cputs(citoaul(ppa_get_mem_total() / 1024, buff, 10));
-  cputln(" KB.");
+  puts_n(9, "[MEM] Used: ", itoa(ppa_get_mem_used() / 1024, buff, 10),
+         " KB   Reserved: ", itoa(ppa_get_mem_rsvd() / 1024, buff, 10),
+         " KB   Free: ", itoa(ppa_get_mem_free() / 1024, buff, 10),
+         " KB   Total: ", itoa(ppa_get_mem_total() / 1024, buff, 10), " KB.\n");
 
-  int *test = (int *)0x80000000000;
-  *test = 26;
+  set_color(BLACK, WHITE);
+  putln("  WHITE   ");
+  set_color(BLACK, YELLOW);
+  putln("  YELLOW  ");
+  set_color(BLACK, ORANGE);
+  putln("  ORANGE  ");
+  set_color(WHITE, RED);
+  putln("   RED    ");
+  set_color(WHITE, MAGENTA);
+  putln(" MAGENTA  ");
+  set_color(WHITE, PURPLE);
+  putln("  PURPLE  ");
+  set_color(WHITE, BLUE);
+  putln("   BLUE   ");
+  set_color(BLACK, CYAN);
+  putln("   CYAN   ");
+  set_color(WHITE, GREEN);
+  putln("  GREEN   ");
+  set_color(WHITE, DARKGREEN);
+  putln("DARKGREEN ");
+  set_color(WHITE, BROWN);
+  putln("   BROWN  ");
+  set_color(WHITE, TAN);
+  putln("   TAN    ");
+  set_color(BLACK, LIGHTGREY);
+  putln("LIGHTGREY ");
+  set_color(WHITE, MEDIUMGREY);
+  putln("MEDIUMGREY");
+  set_color(WHITE, DARKGREY);
+  putln(" DARKGREY ");
+  set_color(WHITE, BLACK);
+  putln("  BLACK   ");
 
-  cputln("\n\nDONE.");
+  puts_at(-4, 0, "DONE");
+  putln("\n\nDONE.");
   for (;;)
     ;
 }
