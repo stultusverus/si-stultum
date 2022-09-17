@@ -3,19 +3,14 @@
 
 #include "conlib.h"
 
-void conlib_init(ssfn_font_t *font, void *fbbase, unsigned int w,
-                 unsigned int h, unsigned int p) {
-  /* set up context by global variables */
-  ssfn_src = font;       /* the bitmap font to use */
-  ssfn_dst.ptr = fbbase; /* framebuffer address and bytes per line */
-  ssfn_dst.w = w;
-  ssfn_dst.h = h;
-  ssfn_dst.x = 0; /* coordinates to draw to */
-  ssfn_dst.y = 0;
-  ssfn_dst.p = p;
-  ssfn_dst.fg = 0xffffffff; /* colors, white on black */
-  ssfn_dst.bg = 0;
-}
+extern void conlib_init(ssfn_font_t *font, void *fbbase, unsigned int w,
+                        unsigned int h, unsigned int p);
+
+extern void set_bg(uint32_t color);
+extern void set_fg(uint32_t color);
+extern void set_color(uint32_t fg, uint32_t bg);
+extern uint32_t get_bg();
+extern uint32_t get_fg();
 
 int putc(int ch) {
   if (ch == '\n') {
@@ -125,6 +120,22 @@ void puts_n(uint64_t n, ...) {
   va_end(args);
 }
 
+void putsx(uint64_t n, uint32_t fg, uint32_t bg, ...) {
+  uint32_t old_fg = get_fg();
+  uint32_t old_bg = get_bg();
+  set_color(fg, bg);
+
+  va_list args;
+  va_start(args, bg);
+  while (n--) {
+    char *crt = va_arg(args, char *);
+    puts(crt);
+  }
+
+  va_end(args);
+  set_color(old_fg, old_bg);
+}
+
 void puts_at(int x, int y, char *str) {
   int old_x = ssfn_dst.x;
   int old_y = ssfn_dst.y;
@@ -138,15 +149,6 @@ void puts_at(int x, int y, char *str) {
   ssfn_dst.x = old_x;
   ssfn_dst.y = old_y;
 }
-
-void set_bg(uint32_t color) { ssfn_dst.bg = color; }
-void set_fg(uint32_t color) { ssfn_dst.fg = color; }
-void set_color(uint32_t fg, uint32_t bg) {
-  ssfn_dst.fg = fg;
-  ssfn_dst.bg = bg;
-}
-uint32_t get_bg() { return ssfn_dst.bg; }
-uint32_t get_fg() { return ssfn_dst.fg; }
 
 void cls() {
   unsigned int len = ssfn_dst.w * ssfn_dst.h;

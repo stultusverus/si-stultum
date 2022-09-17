@@ -20,15 +20,52 @@ const char print_str[] = "DIXITQVE DEVS FIAT LVX ET FACTA EST LVX";
 GDTDescriptor GDTR;
 IDTDescriptor IDTR;
 
-void init_kernel(BootInfo boot_info) {
-  /* initialise GDT */
+void init_gdt() {
   GDTR = (GDTDescriptor){
       .size = sizeof(GDT) - 1,
       .offset = (uint64_t)&DEFAULT_GDT,
   };
   ppa_memset((uint8_t *)&DEFAULT_GDT + 64 * 6, 0, 4096 - 64 * 6);
   set_gdt(&GDTR);
-  /* initialise console output */
+}
+
+void init_pmm(uint64_t fbbase, uint64_t fbsize) {
+  PageTable *PML4 = (PageTable *)ppa_request();
+  ppa_memset(PML4, 0, 4096);
+  pmm_init_pml4(PML4);
+  for (uint64_t addr = 0; addr < ppa_get_mem_total(); addr += 4096)
+    pmm_map_memory((void *)addr, (void *)addr);
+  for (uint64_t addr = fbbase; addr < fbbase + fbsize; addr += 4096)
+    pmm_map_memory((void *)addr, (void *)addr);
+  set_pml4(PML4);
+}
+
+void init_idt() {
+  IDTR = (IDTDescriptor){
+      .offset = (uint64_t)ppa_request(),
+      .size = 0x0fff,
+  };
+
+  IDTEntry *int_page_fault = (IDTEntry *)(IDTR.offset + 0xE * sizeof(IDTEntry));
+  *int_page_fault = IDT_CREATE_ENTRY((uint64_t)PageFault_Handler, 0x08, 0,
+                                     IDT_INTERRUPT_GATE);
+
+  IDTEntry *int_double_fault =
+      (IDTEntry *)(IDTR.offset + 0x8 * sizeof(IDTEntry));
+  *int_double_fault = IDT_CREATE_ENTRY((uint64_t)DoubleFault_Handler, 0x08, 0,
+                                       IDT_INTERRUPT_GATE);
+
+  IDTEntry *int_general_protection_fault =
+      (IDTEntry *)(IDTR.offset + 0xD * sizeof(IDTEntry));
+  *int_general_protection_fault = IDT_CREATE_ENTRY(
+      (uint64_t)GeneralProtectionFault_Handler, 0x08, 0, IDT_INTERRUPT_GATE);
+
+  asm("lidt %0" : : "m"(IDTR));
+}
+
+void init_kernel(BootInfo boot_info) {
+  init_gdt();
+
   conlib_init((ssfn_font_t *)&_binary_assets_u_vga16_sfn_start,
               (void *)boot_info.fb->fbbase, boot_info.fb->width,
               boot_info.fb->height, boot_info.fb->ppsl * 4);
@@ -41,27 +78,10 @@ void init_kernel(BootInfo boot_info) {
   ppa_init(boot_info.mmap, boot_info.mmap_size, boot_info.mmap_desc_size);
   ppa_lckn(&_kernel_start, kernel_pages);
   ppa_lckn((void *)fbbase, fbsize / 4096);
-  /* initialise page table */
-  PageTable *PML4 = (PageTable *)ppa_request();
-  ppa_memset(PML4, 0, 4096);
-  pmm_init_pml4(PML4);
-  for (uint64_t addr = 0; addr < ppa_get_mem_total(); addr += 4096)
-    pmm_map_memory((void *)addr, (void *)addr);
-  for (uint64_t addr = fbbase; addr < fbbase + fbsize; addr += 4096)
-    pmm_map_memory((void *)addr, (void *)addr);
-  set_pml4(PML4);
-  /* initialise IDT */
-  IDTR = (IDTDescriptor){
-      .offset = (uint64_t)ppa_request(),
-      .size = 0x0fff,
-  };
-  IDTEntry *int_page_fault = (IDTEntry *)(IDTR.offset + 0xE * sizeof(IDTEntry));
-  *int_page_fault = IDT_CREATE_ENTRY((uint64_t)PageFault_Handler, 0x08, 0,
-                                     IDT_INTERRUPT_GATE);
 
-  asm("lidt %0" : : "m"(IDTR));
+  init_pmm(fbbase, fbsize);
 
-  // clear_interrupts();
+  init_idt();
 }
 
 void _start(BootInfo boot_info) {
@@ -89,37 +109,40 @@ void _start(BootInfo boot_info) {
          " KB   Total: ", itoa(ppa_get_mem_total() / 1024, buff, 10), " KB.\n");
 
   set_color(BLACK, WHITE);
-  putln("  WHITE   ");
+  puts("  WHITE   ");
   set_color(BLACK, YELLOW);
-  putln("  YELLOW  ");
+  puts("  YELLOW  ");
   set_color(BLACK, ORANGE);
-  putln("  ORANGE  ");
+  puts("  ORANGE  ");
   set_color(WHITE, RED);
-  putln("   RED    ");
+  puts("   RED    ");
   set_color(WHITE, MAGENTA);
-  putln(" MAGENTA  ");
+  puts(" MAGENTA  ");
   set_color(WHITE, PURPLE);
-  putln("  PURPLE  ");
+  puts("  PURPLE  ");
   set_color(WHITE, BLUE);
-  putln("   BLUE   ");
+  puts("   BLUE   ");
   set_color(BLACK, CYAN);
   putln("   CYAN   ");
   set_color(WHITE, GREEN);
-  putln("  GREEN   ");
+  puts("  GREEN   ");
   set_color(WHITE, DARKGREEN);
-  putln("DARKGREEN ");
+  puts("DARKGREEN ");
   set_color(WHITE, BROWN);
-  putln("   BROWN  ");
+  puts("   BROWN  ");
   set_color(WHITE, TAN);
-  putln("   TAN    ");
+  puts("   TAN    ");
   set_color(BLACK, LIGHTGREY);
-  putln("LIGHTGREY ");
+  puts("LIGHTGREY ");
   set_color(WHITE, MEDIUMGREY);
-  putln("MEDIUMGREY");
+  puts("MEDIUMGREY");
   set_color(WHITE, DARKGREY);
-  putln(" DARKGREY ");
+  puts(" DARKGREY ");
   set_color(WHITE, BLACK);
-  putln("  BLACK   ");
+  putln("  BLACK  ");
+
+  int *test = (int *)0x80000000000;
+  *test = 2;
 
   puts_at(-4, 0, "DONE");
   putln("\n\nDONE.");
