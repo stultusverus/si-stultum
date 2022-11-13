@@ -32,4 +32,6 @@ PageTable *pmm_init_pml4(PageTable *addr);
 void pmm_map_memory(void *vaddr, void *paddr);
 void *pmm_find_paddr(void *vaddr);
 
+void set_pml4(PageTable *);
+
 #endif // __PAGE_MAP_H__

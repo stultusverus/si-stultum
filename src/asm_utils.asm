@@ -7,6 +7,11 @@ set_pml4:
     mov cr3, rdi
     ret
 
+global set_idt
+set_idt:
+		lidt [rdi]
+		ret
+
 global clear_interrupts
 clear_interrupts:
 		cli

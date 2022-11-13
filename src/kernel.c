@@ -5,14 +5,12 @@
 #include "interrupts.h"
 #include "page_frames.h"
 #include "page_map.h"
+#include "port_io.h"
 
 extern uint8_t _binary_assets_u_vga16_sfn_start;
 extern uint8_t _binary_assets_u_vga16_sfn_end;
 extern uint8_t _kernel_start;
 extern uint8_t _kernel_end;
-
-void clear_interrupts();
-void set_pml4(PageTable *);
 
 char buff[100];
 const char print_str[] = "DIXITQVE DEVS FIAT LVX ET FACTA EST LVX";
@@ -22,7 +20,7 @@ IDTDescriptor IDTR;
 
 void init_gdt() {
   GDTR = (GDTDescriptor){
-      .size = sizeof(GDT) - 1,
+      .size   = sizeof(GDT) - 1,
       .offset = (uint64_t)&DEFAULT_GDT,
   };
   ppa_memset((uint8_t *)&DEFAULT_GDT + 64 * 6, 0, 4096 - 64 * 6);
@@ -43,7 +41,7 @@ void init_pmm(uint64_t fbbase, uint64_t fbsize) {
 void init_idt() {
   IDTR = (IDTDescriptor){
       .offset = (uint64_t)ppa_request(),
-      .size = 0x0fff,
+      .size   = 0x0fff,
   };
 
   IDTEntry *int_page_fault = (IDTEntry *)(IDTR.offset + 0xE * sizeof(IDTEntry));
@@ -60,7 +58,15 @@ void init_idt() {
   *int_general_protection_fault = IDT_CREATE_ENTRY(
       (uint64_t)GeneralProtectionFault_Handler, 0x08, 0, IDT_INTERRUPT_GATE);
 
-  asm("lidt %0" : : "m"(IDTR));
+  IDTEntry *int_keyboard = (IDTEntry *)(IDTR.offset + 0x21 * sizeof(IDTEntry));
+  *int_keyboard =
+      IDT_CREATE_ENTRY((uint64_t)Keyboard_Handler, 0x08, 0, IDT_INTERRUPT_GATE);
+
+  set_idt(&IDTR);
+  PIC_remap(0x20, 0x28);
+  outb(PIC1_DATA, 0xfd);
+  outb(PIC2_DATA, 0xff);
+  enable();
 }
 
 void init_kernel(BootInfo boot_info) {
@@ -139,10 +145,7 @@ void _start(BootInfo boot_info) {
   set_color(WHITE, DARKGREY);
   puts(" DARKGREY ");
   set_color(WHITE, BLACK);
-  putln("  BLACK  ");
-
-  int *test = (int *)0x80000000000;
-  *test = 2;
+  putln("  BLACK  \n");
 
   puts_at(-4, 0, "DONE");
   putln("\n\nDONE.");

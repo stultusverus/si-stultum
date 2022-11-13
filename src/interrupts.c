@@ -1,5 +1,6 @@
 #include "interrupts.h"
 #include "conlib.h"
+#include "port_io.h"
 
 __attribute__((interrupt)) void
 PageFault_Handler(struct interrupt_frame *frame) {
@@ -23,4 +24,11 @@ GeneralProtectionFault_Handler(struct interrupt_frame *frame) {
   putln("Aborted.");
   for (;;)
     ;
+}
+
+__attribute__((interrupt)) void
+Keyboard_Handler(struct interrupt_frame *frame) {
+  puts(" KB");
+  uint8_t scancode = inb(0x60);
+  PIC_sendEOI(0);
 }

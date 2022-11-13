@@ -30,15 +30,17 @@ typedef IDTEntry IDT[256];
       .offset_1 = ((OFFSET >> 16) & 0xffff),                                   \
       .offset_2 = ((OFFSET >> 32) & 0xffffffff),                               \
       .selector = (SELECTOR),                                                  \
-      .ist = IST,                                                              \
+      .ist = (IST),                                                            \
       .type_attributes =                                                       \
           ((TYPE_ATTR) == IDT_INTERRUPT_GATE || (TYPE_ATTR) == IDT_TRAP_GATE   \
-               ? TYPE_ATTR                                                     \
+               ? (TYPE_ATTR)                                                   \
                : 0x00),                                                        \
       .zero = 0x00000000,                                                      \
   })
 
 IDTEntry idt_create_entry(uint64_t offset, uint16_t selector, uint8_t ist,
                           IDT_GATE_TA type_attributes);
+
+void set_idt(IDTDescriptor *);
 
 #endif //__IDT_H__
