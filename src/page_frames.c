@@ -76,7 +76,7 @@ void ppa_init(EfiMemoryDescriptor *mmap, uint64_t mmap_size,
 }
 
 uint8_t ppa_bitmap_set(uint64_t index, uint8_t set_bit) {
-  if (index > ppa_bitmap._size)
+  if (index > ppa_bitmap._max_index)
     return 0;
   uint32_t mask = 1 << (index % 32);
   if (set_bit)
@@ -87,7 +87,7 @@ uint8_t ppa_bitmap_set(uint64_t index, uint8_t set_bit) {
 }
 
 uint8_t ppa_bitmap_get(uint64_t index) {
-  if (index > ppa_bitmap._size)
+  if (index > ppa_bitmap._max_index)
     return 0;
   uint32_t mask = 1 << (index % 32);
   return ppa_bitmap._data[index / 32] & mask ? 1 : 0;
