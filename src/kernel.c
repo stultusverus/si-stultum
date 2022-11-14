@@ -109,10 +109,15 @@ void _start(BootInfo boot_info) {
   ppa_memcpy(vstr, print_str, 40);
   putln(vstr);
 
-  puts_n(9, "[MEM] Used: ", itoa(ppa_get_mem_used() / 1024, buff, 10),
-         " KB   Reserved: ", itoa(ppa_get_mem_rsvd() / 1024, buff, 10),
-         " KB   Free: ", itoa(ppa_get_mem_free() / 1024, buff, 10),
-         " KB   Total: ", itoa(ppa_get_mem_total() / 1024, buff, 10), " KB.\n");
+  puts("[MEM] Used: ");
+  puts(itoa(ppa_get_mem_used() / 1024, buff, 10));
+  puts(" KB   Reserved: ");
+  puts(itoa(ppa_get_mem_rsvd() / 1024, buff, 10));
+  puts(" KB   Free: ");
+  puts(itoa(ppa_get_mem_free() / 1024, buff, 10));
+  puts(" KB   Total: ");
+  puts(itoa(ppa_get_mem_total() / 1024, buff, 10));
+  putln(" KB.");
 
   set_color(BLACK, WHITE);
   puts("  WHITE   ");

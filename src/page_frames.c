@@ -2,9 +2,9 @@
 #include "efimem.h"
 
 Bitmap ppa_bitmap = {
-    ._size = 0,
+    ._size      = 0,
     ._max_index = 0,
-    ._data = 0,
+    ._data      = 0,
 };
 
 uint64_t mem_used;
@@ -13,13 +13,13 @@ uint64_t mem_free;
 uint64_t mem_total;
 
 uint8_t ppa_initialized = 0;
-uint64_t last_hit = 0;
+uint64_t last_hit       = 0;
 
 static inline void ppa_init_bitmap(uint32_t *data_addr, uint64_t pages) {
-  uint64_t size = pages / 32 + 1;
-  ppa_bitmap._size = size;
+  uint64_t size         = pages / 32 + 1;
+  ppa_bitmap._size      = size;
   ppa_bitmap._max_index = pages - 1;
-  ppa_bitmap._data = data_addr;
+  ppa_bitmap._data      = data_addr;
   for (int i = 0; i < size; i++)
     ppa_bitmap._data[i] = 0;
 }
@@ -35,10 +35,10 @@ void ppa_init(EfiMemoryDescriptor *mmap, uint64_t mmap_size,
               uint64_t mmap_desc_size) {
   if (ppa_initialized)
     return;
-  mem_used = 0;
-  mem_rsvd = 0;
-  mem_free = 0;
-  mem_total = 0;
+  mem_used              = 0;
+  mem_rsvd              = 0;
+  mem_free              = 0;
+  mem_total             = 0;
   void *largest_segment = 0;
   uint64_t largest_size = 0;
   for (EfiMemoryDescriptor *desc = mmap;
@@ -48,7 +48,7 @@ void ppa_init(EfiMemoryDescriptor *mmap, uint64_t mmap_size,
     mem_total += crt_size;
     if (desc->type == 7 && crt_size > largest_size) {
       largest_segment = (void *)desc->physicalstart;
-      largest_size = crt_size;
+      largest_size    = crt_size;
     }
   }
   mem_free = mem_total;
@@ -61,17 +61,18 @@ void ppa_init(EfiMemoryDescriptor *mmap, uint64_t mmap_size,
 
   uint64_t bitmap_pages =
       ppa_bitmap._size / 1024 + (ppa_bitmap._size % 1024 ? 1 : 0);
-  ppa_lckn(ppa_bitmap._data, bitmap_pages);
-  ppa_lck(&ppa_bitmap);
+  ppa_rsvn(0, total_pages);
 
   for (EfiMemoryDescriptor *desc = mmap;
        (uint8_t *)desc < (uint8_t *)mmap + mmap_size;
        desc = ((EfiMemoryDescriptor *)(((uint8_t *)desc) + mmap_desc_size))) {
-    if (desc->type != 7) {
-      ppa_rsvn((void *)desc->physicalstart, desc->numberofpages);
+    if (desc->type == 7) {
+      ppa_ursvn((void *)desc->physicalstart, desc->numberofpages);
     }
   }
 
+  ppa_lckn(ppa_bitmap._data, bitmap_pages);
+  ppa_lck(&ppa_bitmap);
   ppa_initialized = 1;
 }
 
@@ -195,7 +196,7 @@ void *ppa_memset(void *dest, uint8_t val, uint64_t len) {
 }
 
 void *ppa_memcpy(void *dest, const void *src, uint64_t len) {
-  uint8_t *d = dest;
+  uint8_t *d       = dest;
   uint8_t const *s = src;
   while (len--)
     *d++ = *s++;
