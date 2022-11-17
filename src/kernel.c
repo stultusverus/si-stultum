@@ -94,6 +94,11 @@ void _start(BootInfo boot_info) {
 
   init_kernel(boot_info);
 
+  if (init_serial())
+    serial_puts("no hi");
+  else
+    serial_puts("hi");
+
   puts("[MEM] Used: ");
   puts(itoa(ppa_get_mem_used() / 1024, buff, 10));
   puts(" KB   Reserved: ");
