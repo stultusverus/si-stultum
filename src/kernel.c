@@ -91,10 +91,25 @@ void init_kernel(BootInfo boot_info) {
   init_idt();
 }
 
+void detect_kvm() {
+  uint32_t ret[4];
+  cpuid_string(0x00000001, ret);
+  for (int i = 0; i < 4; i++) {
+    kputs(itoa(ret[i], buff, 16));
+    kputs("\n");
+  }
+  cpuid_string(0x8000000a, ret);
+  for (int i = 0; i < 4; i++) {
+    kputs(itoa(ret[i], buff, 16));
+    kputs("\n");
+  }
+}
+
 void _start(BootInfo boot_info) {
 
   init_serial();
   init_kernel(boot_info);
+  detect_kvm();
 
   kputs("[MEM] Used: ");
   kputs(itoa(ppa_get_mem_used() / 1024, buff, 10));
