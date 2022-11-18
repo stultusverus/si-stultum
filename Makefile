@@ -37,7 +37,7 @@ LDFLAGS=-shared -Bsymbolic \
 LOADLIBES=-lgnuefi -lefi
 LDLIBS=$(LOADLIBES)
 
-KERNEL_TARGETS=kernel font ssfn conlib efimem page_frames page_map gdt idt interrupts port_io
+KERNEL_TARGETS=kernel font ssfn conlib efimem page_frames page_map gdt idt interrupts port_io logging
 KERNEL_OBJS=$(patsubst %,obj/%.o,$(KERNEL_TARGETS))
 
 .PHONY: all

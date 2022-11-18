@@ -3,6 +3,7 @@
 #include "gdt.h"
 #include "idt.h"
 #include "interrupts.h"
+#include "logging.h"
 #include "page_frames.h"
 #include "page_map.h"
 #include "port_io.h"
@@ -20,7 +21,7 @@ IDTDescriptor IDTR;
 
 void init_gdt() {
   GDTR = (GDTDescriptor){
-      .size   = sizeof(GDT) - 1,
+      .size = sizeof(GDT) - 1,
       .offset = (uint64_t)&DEFAULT_GDT,
   };
   ppa_memset((uint8_t *)&DEFAULT_GDT + 64 * 6, 0, 4096 - 64 * 6);
@@ -41,7 +42,7 @@ void init_pmm(uint64_t fbbase, uint64_t fbsize) {
 void init_idt() {
   IDTR = (IDTDescriptor){
       .offset = (uint64_t)ppa_request(),
-      .size   = 0x0fff,
+      .size = 0x0fff,
   };
 
   IDTEntry *int_page_fault = (IDTEntry *)(IDTR.offset + 0xE * sizeof(IDTEntry));
@@ -92,37 +93,34 @@ void init_kernel(BootInfo boot_info) {
 
 void _start(BootInfo boot_info) {
 
+  init_serial();
   init_kernel(boot_info);
 
-  if (init_serial())
-    serial_puts("no hi");
-  else
-    serial_puts("hi");
-
-  puts("[MEM] Used: ");
-  puts(itoa(ppa_get_mem_used() / 1024, buff, 10));
-  puts(" KB   Reserved: ");
-  puts(itoa(ppa_get_mem_rsvd() / 1024, buff, 10));
-  puts(" KB   Free: ");
-  puts(itoa(ppa_get_mem_free() / 1024, buff, 10));
-  puts(" KB   Total: ");
-  puts(itoa(ppa_get_mem_total() / 1024, buff, 10));
-  putln(" KB.");
+  kputs("[MEM] Used: ");
+  kputs(itoa(ppa_get_mem_used() / 1024, buff, 10));
+  kputs(" KB   Reserved: ");
+  kputs(itoa(ppa_get_mem_rsvd() / 1024, buff, 10));
+  kputs(" KB   Free: ");
+  kputs(itoa(ppa_get_mem_free() / 1024, buff, 10));
+  kputs(" KB   Total: ");
+  kputs(itoa(ppa_get_mem_total() / 1024, buff, 10));
+  kputs(" KB.\n");
 
   char *vstr = (char *)0x600000000;
   pmm_map_memory(vstr, (void *)0x80000);
   ppa_memcpy(vstr, print_str, 40);
-  putln(vstr);
+  kputs(vstr);
+  kputs("\n");
 
-  puts("[MEM] Used: ");
-  puts(itoa(ppa_get_mem_used() / 1024, buff, 10));
-  puts(" KB   Reserved: ");
-  puts(itoa(ppa_get_mem_rsvd() / 1024, buff, 10));
-  puts(" KB   Free: ");
-  puts(itoa(ppa_get_mem_free() / 1024, buff, 10));
-  puts(" KB   Total: ");
-  puts(itoa(ppa_get_mem_total() / 1024, buff, 10));
-  putln(" KB.");
+  kputs("[MEM] Used: ");
+  kputs(itoa(ppa_get_mem_used() / 1024, buff, 10));
+  kputs(" KB   Reserved: ");
+  kputs(itoa(ppa_get_mem_rsvd() / 1024, buff, 10));
+  kputs(" KB   Free: ");
+  kputs(itoa(ppa_get_mem_free() / 1024, buff, 10));
+  kputs(" KB   Total: ");
+  kputs(itoa(ppa_get_mem_total() / 1024, buff, 10));
+  kputs(" KB.\n");
 
   set_color(BLACK, WHITE);
   puts("  WHITE   ");
