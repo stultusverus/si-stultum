@@ -1,4 +1,5 @@
 #include "kernel.h"
+#include "chrono.h"
 #include "conlib.h"
 #include "gdt.h"
 #include "idt.h"
@@ -59,6 +60,10 @@ void init_idt() {
   *int_general_protection_fault = IDT_CREATE_ENTRY(
       (uint64_t)GeneralProtectionFault_Handler, 0x08, 0, IDT_INTERRUPT_GATE);
 
+  IDTEntry *int_timer = (IDTEntry *)(IDTR.offset + 0x20 * sizeof(IDTEntry));
+  *int_timer =
+      IDT_CREATE_ENTRY((uint64_t)Timer_Handler, 0x08, 0, IDT_INTERRUPT_GATE);
+
   IDTEntry *int_keyboard = (IDTEntry *)(IDTR.offset + 0x21 * sizeof(IDTEntry));
   *int_keyboard =
       IDT_CREATE_ENTRY((uint64_t)Keyboard_Handler, 0x08, 0, IDT_INTERRUPT_GATE);
@@ -67,7 +72,8 @@ void init_idt() {
   PIC_remap(0x20, 0x28);
   outb(PIC1_DATA, 0xfd);
   outb(PIC2_DATA, 0xff);
-  enable();
+  init_PIT(1000);
+  enable_interrupts();
 }
 
 void init_kernel(BootInfo boot_info) {
@@ -91,25 +97,10 @@ void init_kernel(BootInfo boot_info) {
   init_idt();
 }
 
-void detect_kvm() {
-  uint32_t ret[4];
-  cpuid_string(0x00000001, ret);
-  for (int i = 0; i < 4; i++) {
-    kputs(itoa(ret[i], buff, 16));
-    kputs("\n");
-  }
-  cpuid_string(0x8000000a, ret);
-  for (int i = 0; i < 4; i++) {
-    kputs(itoa(ret[i], buff, 16));
-    kputs("\n");
-  }
-}
-
 void _start(BootInfo boot_info) {
 
   init_serial();
   init_kernel(boot_info);
-  detect_kvm();
 
   kputs("[MEM] Used: ");
   kputs(itoa(ppa_get_mem_used() / 1024, buff, 10));

@@ -12,11 +12,6 @@ set_idt:
 		lidt [rdi]
 		ret
 
-global clear_interrupts
-clear_interrupts:
-		cli
-		ret
-
 global set_gdt
 set_gdt:
    lgdt  [rdi]

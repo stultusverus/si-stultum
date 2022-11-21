@@ -3,6 +3,8 @@
 
 #include <stdint.h>
 
+#define PIC_EOI 0x20 /* End-of-interrupt command code */
+
 #define PIC1 0x20 /* IO base address for master PIC */
 #define PIC2 0xA0 /* IO base address for slave PIC */
 #define PIC1_COMMAND PIC1
@@ -40,9 +42,18 @@ static inline uint8_t inb(uint16_t port) {
 
 static inline void io_wait(void) { outb(0x80, 0); }
 
-static inline void enable() { asm("sti"); }
+static inline void enable_interrupts() { asm("sti"); }
+static inline void clear_interrupts() { asm("cli"); }
 
 void PIC_remap(int offset1, int offset2);
-void PIC_sendEOI(unsigned char irq);
+
+static inline void PIC_sendEOI(unsigned char irq) {
+  if (irq >= 8)
+    outb(PIC2_COMMAND, PIC_EOI);
+  outb(PIC1_COMMAND, PIC_EOI);
+}
+
+void IRQ_set_mask(unsigned char IRQline);
+void IRQ_clear_mask(unsigned char IRQline);
 
 #endif // __PORT_IO_H__
