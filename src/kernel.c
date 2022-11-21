@@ -70,9 +70,9 @@ void init_idt() {
 
   set_idt(&IDTR);
   PIC_remap(0x20, 0x28);
-  outb(PIC1_DATA, 0xfd);
-  outb(PIC2_DATA, 0xff);
   init_PIT(1000);
+  outb(PIC1_DATA, 0xfc); // Master 8259 masks
+  outb(PIC2_DATA, 0xff); // Slave 8259 masks
   enable_interrupts();
 }
 

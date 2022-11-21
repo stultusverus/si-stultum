@@ -21,5 +21,5 @@ void init_PIT(uint32_t frequency) {
   outb(0x40, lo); // data channel 0
   outb(0x40, hi);
 
-  IRQ_clear_mask(0);
+  // IRQ_clear_mask(0);
 }
