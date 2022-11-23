@@ -158,7 +158,14 @@ void _start(BootInfo boot_info) {
   putln("  BLACK  \n");
 
   puts_at(-4, 0, "DONE");
-  serial_printf("Done.\n");
+  serial_printf("Done. Shuting down...\n");
+
+  outw(0x604, 0x2000);  // newer version
+  outw(0xB004, 0x2000); // older version
+
+  while (ms_count < 3000)
+    asm("hlt");
+  serial_printf("Shutdown failed.\n");
   for (;;)
     ;
 }

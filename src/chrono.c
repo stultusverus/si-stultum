@@ -5,11 +5,11 @@
 // qemu under wsl has not kvm support.
 // implement this later.
 
-uint64_t ms_count;
+volatile uint64_t ms_count;
 
 void init_PIT(uint32_t frequency) {
   uint32_t divisor = 1193180 / frequency;
-  ms_count = 0;
+  ms_count         = 0;
 
   outb(0x43, 0x36); // command mode channel
 
