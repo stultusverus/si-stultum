@@ -1,19 +1,12 @@
 #include "port_io.h"
 #include "conlib.h"
-#include "logging.h"
-
-char buff[100];
+#include "serial.h"
 
 void PIC_remap(int offset1, int offset2) {
   unsigned char a1, a2;
 
   a1 = inb(PIC1_DATA); // save masks
   a2 = inb(PIC2_DATA);
-
-  kputs(itoa(a1, buff, 16));
-  kputs(" is a1\n");
-  kputs(itoa(a2, buff, 16));
-  kputs(" is a2\n");
 
   // starts the initialization sequence (in cascade mode)
   outb(PIC1_COMMAND, ICW1_INIT | ICW1_ICW4);

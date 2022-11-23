@@ -4,10 +4,10 @@
 #include "gdt.h"
 #include "idt.h"
 #include "interrupts.h"
-#include "logging.h"
 #include "page_frames.h"
 #include "page_map.h"
 #include "port_io.h"
+#include "serial.h"
 
 extern uint8_t _binary_assets_u_vga16_sfn_start;
 extern uint8_t _binary_assets_u_vga16_sfn_end;
@@ -22,7 +22,7 @@ IDTDescriptor IDTR;
 
 void init_gdt() {
   GDTR = (GDTDescriptor){
-      .size = sizeof(GDT) - 1,
+      .size   = sizeof(GDT) - 1,
       .offset = (uint64_t)&DEFAULT_GDT,
   };
   ppa_memset((uint8_t *)&DEFAULT_GDT + 64 * 6, 0, 4096 - 64 * 6);
@@ -43,7 +43,7 @@ void init_pmm(uint64_t fbbase, uint64_t fbsize) {
 void init_idt() {
   IDTR = (IDTDescriptor){
       .offset = (uint64_t)ppa_request(),
-      .size = 0x0fff,
+      .size   = 0x0fff,
   };
 
   IDTEntry *int_page_fault = (IDTEntry *)(IDTR.offset + 0xE * sizeof(IDTEntry));
@@ -78,6 +78,7 @@ void init_idt() {
 
 void init_kernel(BootInfo boot_info) {
   init_gdt();
+  serial_printf("GDT loaded.\n");
 
   conlib_init((ssfn_font_t *)&_binary_assets_u_vga16_sfn_start,
               (void *)boot_info.fb->fbbase, boot_info.fb->width,
@@ -95,38 +96,33 @@ void init_kernel(BootInfo boot_info) {
   init_pmm(fbbase, fbsize);
 
   init_idt();
+  serial_printf("IDT loaded.\n");
 }
 
 void _start(BootInfo boot_info) {
 
   init_serial();
+  serial_printf("Serial logging enabled.\n");
+
   init_kernel(boot_info);
 
-  kputs("[MEM] Used: ");
-  kputs(itoa(ppa_get_mem_used() / 1024, buff, 10));
-  kputs(" KB   Reserved: ");
-  kputs(itoa(ppa_get_mem_rsvd() / 1024, buff, 10));
-  kputs(" KB   Free: ");
-  kputs(itoa(ppa_get_mem_free() / 1024, buff, 10));
-  kputs(" KB   Total: ");
-  kputs(itoa(ppa_get_mem_total() / 1024, buff, 10));
-  kputs(" KB.\n");
+  serial_printf(
+      "[MEM] %d KB USED   %d KB RESERVED   %d KB FREE   %d KB TOTAL\n",
+      ppa_get_mem_used() / 1024, ppa_get_mem_rsvd() / 1024,
+      ppa_get_mem_free() / 1024, ppa_get_mem_total() / 1024);
 
+  serial_printf("Testing memory mapping...\n");
   char *vstr = (char *)0x600000000;
   pmm_map_memory(vstr, (void *)0x80000);
   ppa_memcpy(vstr, print_str, 40);
-  kputs(vstr);
-  kputs("\n");
+  serial_printf("%s\n", vstr);
 
-  kputs("[MEM] Used: ");
-  kputs(itoa(ppa_get_mem_used() / 1024, buff, 10));
-  kputs(" KB   Reserved: ");
-  kputs(itoa(ppa_get_mem_rsvd() / 1024, buff, 10));
-  kputs(" KB   Free: ");
-  kputs(itoa(ppa_get_mem_free() / 1024, buff, 10));
-  kputs(" KB   Total: ");
-  kputs(itoa(ppa_get_mem_total() / 1024, buff, 10));
-  kputs(" KB.\n");
+  serial_printf("Memory mapping OK.\n");
+
+  serial_printf("[MEM] %d KB USED   %d KB RESERVED   %d KB "
+                "FREE   %d KB TOTAL\n",
+                ppa_get_mem_used() / 1024, ppa_get_mem_rsvd() / 1024,
+                ppa_get_mem_free() / 1024, ppa_get_mem_total() / 1024);
 
   set_color(BLACK, WHITE);
   puts("  WHITE   ");
@@ -162,7 +158,7 @@ void _start(BootInfo boot_info) {
   putln("  BLACK  \n");
 
   puts_at(-4, 0, "DONE");
-  putln("\n\nDONE.");
+  serial_printf("Done.\n");
   for (;;)
     ;
 }

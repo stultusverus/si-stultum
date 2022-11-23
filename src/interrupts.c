@@ -1,8 +1,8 @@
 #include "interrupts.h"
 #include "chrono.h"
 #include "conlib.h"
-#include "logging.h"
 #include "port_io.h"
+#include "serial.h"
 
 __attribute__((interrupt)) void
 PageFault_Handler(struct interrupt_frame *frame) {
@@ -37,7 +37,5 @@ Keyboard_Handler(struct interrupt_frame *frame) {
 
 __attribute__((interrupt)) void Timer_Handler(struct interrupt_frame *frame) {
   ms_count++;
-  if (ms_count % 1000 == 0)
-    kputs("hi. \n");
   PIC_sendEOI(0);
 }

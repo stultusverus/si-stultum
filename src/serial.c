@@ -1,4 +1,4 @@
-#include "logging.h"
+#include "serial.h"
 
 #include "port_io.h"
 
@@ -31,10 +31,11 @@ int init_serial() {
   return 0;
 }
 
-void kputc(char c) {
+int kputc(int c) {
   while (is_transmit_empty() == 0)
     ;
   outb(COM1_PORT, c);
+  return c;
 }
 
 int kputs(const char *s) {

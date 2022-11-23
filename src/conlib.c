@@ -2,6 +2,7 @@
 #include "ssfn.h"
 
 #include "conlib.h"
+#include "string.h"
 
 extern void conlib_init(ssfn_font_t *font, void *fbbase, unsigned int w,
                         unsigned int h, unsigned int p);
@@ -68,26 +69,6 @@ char *itoa(unsigned long value, char *buff, int base) {
   return strrev(buff);
 }
 
-int cstrlen(const char *str) {
-  register const char *s;
-  for (s = str; *s; ++s)
-    ;
-  return (s - str);
-}
-
-char *strrev(char *str) {
-  int i;
-  int j;
-  unsigned char a;
-  unsigned len = cstrlen((const char *)str);
-  for (i = 0, j = len - 1; i < j; i++, j--) {
-    a = str[i];
-    str[i] = str[j];
-    str[j] = a;
-  }
-  return str;
-}
-
 char *ftoa(double value, char *buff) { return ftoan(value, buff, 8); }
 
 char *ftoan(double value, char *buff, int n) {
@@ -98,12 +79,12 @@ char *ftoan(double value, char *buff, int n) {
   itoas(int_part, buff, 10);
   if (value < 0)
     value = -value;
-  cp += cstrlen(buff);
+  cp += strlen(buff);
   *cp++ = '.';
   while (n--) {
     value *= 10;
     int digit = value;
-    *cp++ = '0' + digit;
+    *cp++     = '0' + digit;
     value -= digit;
   }
   *cp = '\0';
@@ -151,7 +132,7 @@ void puts_at(int x, int y, char *str) {
 }
 
 void cls() {
-  unsigned int len = ssfn_dst.w * ssfn_dst.h;
+  unsigned int len       = ssfn_dst.w * ssfn_dst.h;
   register uint32_t *ptr = (uint32_t *)ssfn_dst.ptr;
   while (len-- > 0)
     *ptr++ = ssfn_dst.bg;
