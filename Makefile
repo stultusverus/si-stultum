@@ -96,6 +96,14 @@ qemu: $(OSIMG)
 		-drive if=pflash,format=raw,unit=0,file=OVMF/OVMF_CODE.fd,readonly=on\
 		-drive if=pflash,format=raw,unit=1,file=OVMF/OVMF_VARS.fd
 
+qemu-nographic: $(OSIMG)
+	qemu-system-x86_64 \
+		-m 256M -cpu qemu64 -net none \
+		-drive "file=$(OSIMG),format=raw" \
+		-drive if=pflash,format=raw,unit=0,file=OVMF/OVMF_CODE.fd,readonly=on\
+		-drive if=pflash,format=raw,unit=1,file=OVMF/OVMF_VARS.fd \
+		-nographic
+
 qemu-debug: $(OSIMG)
 	qemu-system-x86_64 -S -s\
 		-m 256M -cpu qemu64 -net none \
