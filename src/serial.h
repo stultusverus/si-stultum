@@ -9,5 +9,10 @@
   }
 
 int init_serial();
+
+int serial_transmit_empty();
 int kputc(int c);
 int kputs(const char *s);
+
+int serial_received();
+int kgetc();

@@ -6,7 +6,7 @@
 
 #define COM1_PORT 0x3f8 // COM1
 
-static inline int is_transmit_empty() { return inb(COM1_PORT + 5) & 0x20; }
+inline int serial_transmit_empty() { return inb(COM1_PORT + 5) & 0x20; }
 
 int init_serial() {
   outb(COM1_PORT + 1, 0x00); // Disable all interrupts
@@ -32,7 +32,7 @@ int init_serial() {
 }
 
 int kputc(int c) {
-  while (is_transmit_empty() == 0)
+  while (serial_transmit_empty() == 0)
     ;
   outb(COM1_PORT, c);
   return c;
@@ -42,4 +42,13 @@ int kputs(const char *s) {
   while (*s)
     kputc(*s++);
   return 0;
+}
+
+inline int serial_received() { return inb(COM1_PORT + 5) & 1; }
+
+int kgetc() {
+  while (serial_received() == 0)
+    ;
+
+  return inb(COM1_PORT);
 }

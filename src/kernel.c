@@ -156,16 +156,21 @@ void _start(BootInfo boot_info) {
   puts(" DARKGREY ");
   set_color(WHITE, BLACK);
   putln("  BLACK  \n");
-
   puts_at(-4, 0, "DONE");
-  serial_printf("Done. Shuting down...\n");
 
-  outw(0x604, 0x2000);  // newer version
-  outw(0xB004, 0x2000); // older version
+  // serial_printf("Done. Shuting down...\n");
+  // outw(0x604, 0x2000);  // newer version
+  // outw(0xB004, 0x2000); // older version
 
   while (ms_count < 3000)
     asm("hlt");
-  serial_printf("Shutdown failed.\n");
-  for (;;)
-    ;
+  serial_printf("Now try typing something.\n");
+  for (;;) {
+    asm("hlt");
+    if (serial_received()) {
+      int ch = kgetc();
+      kputc(ch);
+    }
+  }
+  __builtin_unreachable();
 }
