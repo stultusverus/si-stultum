@@ -14,13 +14,7 @@ PageDirectoryEntry *pmm_flag_set(PageDirectoryEntry *entry, PdeBitFlag bit_mask,
 }
 
 uint8_t pmm_flag_get(PageDirectoryEntry *entry, PdeBitFlag bit_mask) {
-  PdeBitFlag it = 1;
-  while (it >= bit_mask) {
-    if (it & bit_mask && !(it & *entry))
-      return 0;
-    it <<= 1;
-  }
-  return 1;
+  return ((*entry & bit_mask) == bit_mask) ? 1 : 0;
 }
 
 PageDirectoryEntry *pmm_addr_set(PageDirectoryEntry *entry, uint64_t addr) {
